@@ -1,0 +1,836 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>🪄二进制安全分析报告🪄 ——Power by HRP@Nepnep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary:"#8B5CF6", secondary:"#C4B5FD" },
+                    borderRadius: { DEFAULT:"8px", md:"12px", lg:"16px", full:"9999px" }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+    
+    <style>
+    @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+    @keyframes sparkle { 0%,100% { opacity:0 } 50% { opacity:1 } }
+    @keyframes scanline { 0% { transform:translateY(-100%) } 100% { transform:translateY(100%) } }
+    #pseudo-code::-webkit-scrollbar,
+    #assembly-code::-webkit-scrollbar {
+        width: 8px;
+        background: rgba(0,0,0,0.2);
+    }
+
+    #pseudo-code::-webkit-scrollbar-thumb,
+    #assembly-code::-webkit-scrollbar-thumb {
+        background: #8B5CF6;
+        border-radius: 4px;
+    }
+
+    #pseudo-code::-webkit-scrollbar-track,
+    #assembly-code::-webkit-scrollbar-track {
+        background: rgba(139,92,246,0.1);
+    }
+    .magic-card {
+        background: rgba(139, 92, 246, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(31,38,135,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .magic-card::before {
+        content: '';
+        position: absolute;
+        top:0; left:0; right:0;
+        height:2px;
+        background: linear-gradient(90deg,transparent,rgba(139,92,246,0.8),transparent);
+        animation: scanline 2s linear infinite;
+    }
+    .cyber-border {
+        border:2px solid transparent;
+        background-image: linear-gradient(black,black),linear-gradient(135deg,rgba(139,92,246,0.8) 0%,rgba(196,181,253,0.8) 100%);
+        background-origin: border-box;
+        background-clip: padding-box,border-box;
+    }
+    .particle {
+        position:absolute;
+        width:3px; height:3px;
+        background:rgba(255,255,255,0.5);
+        border-radius:50%;
+        pointer-events:none;
+    }
+    .glass-card {
+        background:rgba(31,41,55,0.9);
+        border:1px solid rgba(139,92,246,0.3);
+        backdrop-filter:blur(10px);
+    }
+    .resize-handle {
+        position:absolute;
+        right:0; bottom:0;
+        width:20px; height:20px;
+        cursor:nwse-resize;
+        background:#8B5CF6;
+        border-radius:4px 0 0 0;
+    }
+    .vuln-detail-card {
+        background:rgba(255,255,255,0.05);
+        border-left:3px solid #8B5CF6;
+        padding:1rem;
+        margin:1rem 0;
+    }
+    .call-chain {
+        padding-left:1.5rem;
+        border-left:2px solid rgba(139,92,246,0.5);
+        margin:1rem 0;
+    }
+    .function-name {
+        cursor:pointer;
+        transition:all 0.3s ease;
+    }
+    .function-name:hover {
+        color:#C4B5FD !important;
+        text-shadow:0 0 10px rgba(139,92,246,0.5);
+    }
+    </style>
+    
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8 min-h-screen">
+        <!-- 头部 -->
+        <div class="text-center mb-12">
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+            <h1 class="text-4xl font-bold mb-4 relative inline-block">
+                <span class="relative z-10">🪄二进制安全分析报告🪄</span>
+                <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-purple-400 opacity-50 blur"></div>
+            </h1>
+            <p class="text-lg opacity-80">Power by HRP@Nepnep</p>
+            <br>
+            <p class="text-lg opacity-80">🕛报告生成时间：2025-02-25 23:18:23</p>
+
+            <div class="flex items-center justify-center gap-4 mt-4">
+                <a href="https://github.com/hexian2001" class="flex items-center gap-2 text-white/80 hover:text-white">
+                    <i class="ri-github-line"></i>
+                    Visit My GitHub
+                </a>
+                <span class="text-white/60" id="report-time"></span>
+            </div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div class="grid gap-8 max-w-6xl mx-auto">
+            <!-- 风险概况 -->
+            <div class="magic-card rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <i class="ri-error-warning-line text-yellow-400"></i>
+                        风险概况
+                    </h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">高危漏洞数量</p>
+                        <p class="text-3xl font-bold text-red-400">4</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">中危漏洞数量</p>
+                        <p class="text-3xl font-bold text-yellow-400">1</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">低危漏洞数量</p>
+                        <p class="text-3xl font-bold text-green-400">0</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">总漏洞数量</p>
+                        <p class="text-3xl font-bold text-blue-400">5</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 漏洞详情 -->
+                <div class="magic-card rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">漏洞详情</h2>
+                        <div class="relative w-full md:w-64">
+                            <input 
+                                type="text" 
+                                id="vulnSearch" 
+                                placeholder="搜索漏洞..." 
+                                class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-500 transition-all"
+                            >
+                            <i class="ri-search-line absolute right-3 top-3 text-white/50"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-6" id="vulnContainer">
+                        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 1: strcpy</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-120</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln1')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln1-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln1-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">strcpy函数在处理字符串拷贝时，没有对源字符串的长度进行检查，可能导致目标缓冲区溢出。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        在main函数中，通过环境变量或输入获取到的字符串长度未被限制，直接传递给strcpy函数。<br>strcpy函数在复制字符串时，没有检查源字符串的长度，导致目标缓冲区可能被超出边界写入。
+                    </p>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-map-pin-line mr-2"></i>
+                        调用点位
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-purple-900/50 rounded-full">main@0x401108 → strcpy@0x400ae0</span>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401108">
+                                main@0x401108
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="strcpy@0x400ae0">
+                                strcpy@0x400ae0
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">使用更安全的函数替代strcpy，如strncpy，同时指定最大复制长度。</li><li class="text-white/80">在调用strcpy之前，增加对源字符串长度的检查，确保不会超过目标缓冲区的大小。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 2: printf</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-119</span>
+                            <span>CVSS: 6.5</span>
+                            <span class="text-yellow-400 font-medium">中危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln2')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln2-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln2-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">程序未能正确地验证输入的格式化字符串，导致攻击者可以通过精心构造的格式化字符串来读取或覆盖任意内存位置。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        在main函数中，通过环境变量或用户输入获取到的字符串被直接用于printf函数的格式化字符串参数。由于没有对这些字符串进行有效的验证或过滤，攻击者可以通过构造特定的格式化字符串来控制程序的行为。
+                    </p>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-map-pin-line mr-2"></i>
+                        调用点位
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-purple-900/50 rounded-full">main@0x401298 → printf@0x400af0</span>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401298">
+                                main@0x401298
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="printf@0x400af0">
+                                printf@0x400af0
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">在使用printf之前，对格式化字符串进行严格的验证，确保其不包含危险的格式化字符。</li><li class="text-white/80">使用安全的替代函数，如strncpy等，来处理用户输入的数据。</li><li class="text-white/80">确保所有传入printf的格式化字符串都是可信的，例如通过白名单机制限制输入。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 3: fgets</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-120</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln3')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln3-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln3-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">通过fgets函数读取用户输入的数据时，如果缓冲区大小没有得到正确的校验，可能会导致堆栈溢出。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        在main函数中，fgets被调用来读取/tmp/crpc_url文件的内容。这里需要注意的是，fgets的第二个参数（缓冲区大小）是否与实际分配的缓冲区大小一致。如果不一致，可能会导致堆栈溢出。<br>在main函数中，fgets的调用位于0x4011a0处，此时它从文件流中读取数据到v42缓冲区，该缓冲区大小为100字节。如果读取的数据超过100字节，将会导致堆栈溢出。
+                    </p>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-map-pin-line mr-2"></i>
+                        调用点位
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-purple-900/50 rounded-full">main@0x4011a0 → fgets@0x400b30</span>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x4011a0">
+                                main@0x4011a0
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="fgets@0x400b30">
+                                fgets@0x400b30
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">确保fgets的第二个参数（缓冲区大小）与实际分配的缓冲区大小一致。例如，在调用fgets之前，可以使用fstat或其他方法获取文件的实际大小，并据此调整缓冲区大小。</li><li class="text-white/80">在fgets调用之后，增加对读取数据长度的检查，确保其不超过预期的最大长度。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 4: system</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-78</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln4')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln4-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln4-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">通过不受信任的输入直接调用system函数可能导致命令注入攻击。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        在main函数中，从环境变量或用户输入中获取数据，并将其用于构建命令字符串。这些数据未经充分验证或过滤，直接传递给system函数。<br>具体来说，从环境变量或HTTP请求中获取的数据（如CSAuthUrl、CSAuth、action等）被拼接到命令字符串中，这可能导致命令注入。
+                    </p>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-map-pin-line mr-2"></i>
+                        调用点位
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-purple-900/50 rounded-full">main@0x40114c → system@0x400b50</span>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x40114c">
+                                main@0x40114c
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="system@0x400b50">
+                                system@0x400b50
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">使用白名单机制，只允许特定的命令或参数。</li><li class="text-white/80">考虑使用更安全的替代方法，如exec系列函数，而不是直接使用system。</li><li class="text-white/80">对所有用户输入进行严格的验证和过滤，确保不会包含特殊字符或命令。</li><li class="text-white/80">在调用system之前，使用适当的编码或转义机制处理输入数据。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 5: sprintf</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-119</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln5')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln5-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln5-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">格式化字符串漏洞，攻击者可以通过控制格式化字符串参数来访问内存或修改数据。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        在main函数中，通过环境变量或用户输入获取字符串，并将其作为参数传递给sprintf函数。攻击者可以通过控制这些输入来影响sprintf函数的行为。
+                    </p>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-map-pin-line mr-2"></i>
+                        调用点位
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-purple-900/50 rounded-full">main@0x400f8c → sprintf@0x400c50</span>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x400f8c">
+                                main@0x400f8c
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sprintf@0x400c50">
+                                sprintf@0x400c50
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-detail-card">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">确保所有传入sprintf的格式化字符串都是可信的，避免直接使用用户输入或环境变量作为格式化字符串。</li><li class="text-white/80">使用安全的替代函数，如snprintf，限制写入缓冲区的最大长度。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+                    </div>
+
+                    <div class="pagination-controls flex items-center justify-center gap-4 mt-4">
+                        <button id="prevPage" class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>上一页</button>
+                        <span id="pageInfo" class="text-white/80">第1页/共3页</span>
+                        <button id="nextPage" class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed">下一页</button>
+                    </div>
+                </div>
+        </div>
+
+        <!-- 代码查看卡片（左右分栏版） -->
+        <div id="code-card" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+            <div class="glass-card rounded-xl p-6 max-w-6xl w-full h-[90vh] flex flex-col" style="min-width: 800px; min-height: 500px;">
+                <div class="resize-handle"></div>
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-purple-400/30">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="ri-code-s-slash-line"></i>
+                        代码解析 - <span id="current-function" class="text-purple-300"></span>
+                    </h3>
+                    <button id="close-btn" class="text-2xl hover:text-purple-400 transition-transform hover:scale-125">
+                        ×
+                    </button>
+                </div>
+                
+                <!-- 左右分栏布局 -->
+                <div class="flex-1 grid grid-cols-2 gap-6 overflow-hidden" style="min-height: 400px;">
+                    <!-- 伪代码区域 -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <div id="pseudo-code" class="flex-1 overflow-auto font-mono text-sm p-4 bg-black/20 rounded-lg">
+                            <div class="mb-2 flex items-center gap-2 text-purple-300">
+                                <i class="ri-file-code-line"></i>
+                                <span>伪代码分析</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 汇编代码区域 -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <div id="assembly-code" class="flex-1 overflow-auto font-mono text-sm p-4 bg-black/20 rounded-lg">
+                            <div class="text-secondary mb-4 flex items-center gap-2">
+                                <i class="ri-information-line"></i>
+                                <span>点击调用链中的函数查看详细代码</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态栏 -->
+                <div class="mt-4 pt-2 border-t border-purple-400/30 text-sm text-white/60 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span id="code-status" class="flex items-center gap-2">
+                            <i class="ri-terminal-box-line"></i>
+                            <span>就绪</span>
+                        </span>
+                        <span id="code-location" class="flex items-center gap-2">
+                            <i class="ri-map-pin-line"></i>
+                            <span>链路上下一调用地址: 0x0000</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+    const globalCodeDict = {"main": {"pseudo_code": ["int __fastcall main(int argc, const char **argv, const char **envp)\n{\n  int v3; // $a1\n  int v4; // $a2\n  int v5; // $v0\n  int v6; // $s1\n  int v7; // $s2\n  int v8; // $a2\n  int v9; // $a1\n  int v10; // $a2\n  int v11; // $v0\n  int v12; // $s2\n  char *v13; // $s0\n  int v14; // $s1\n  int v15; // $a1\n  int v16; // $a2\n  int v17; // $s0\n  int v18; // $s1\n  int ArrayItem; // $a0\n  int v20; // $s2\n  int Object; // $s0\n  int String; // $v0\n  int v23; // $v0\n  int v24; // $v0\n  const char *v25; // $a1\n  int v26; // $v0\n  __int64 v27; // $v0\n  int Number; // $v0\n  int v29; // $v0\n  int v30; // $s2\n  unsigned int i; // $s3\n  int v32; // $v0\n  const char *v33; // $s2\n  unsigned __int8 v35; // [sp+28h] [-21DCh] BYREF\n  unsigned __int8 v36; // [sp+29h] [-21DBh]\n  unsigned __int8 v37; // [sp+2Ah] [-21DAh]\n  unsigned __int8 v38; // [sp+2Bh] [-21D9h]\n  unsigned __int8 v39; // [sp+2Ch] [-21D8h]\n  unsigned __int8 v40; // [sp+2Dh] [-21D7h]\n  _DWORD v41[25]; // [sp+68h] [-219Ch] BYREF\n  _BYTE v42[100]; // [sp+CCh] [-2138h] BYREF\n  char v43[100]; // [sp+130h] [-20D4h] BYREF\n  char v44[100]; // [sp+194h] [-2070h] BYREF\n  _BYTE v45[4096]; // [sp+1F8h] [-200Ch] BYREF\n  char v46[4096]; // [sp+11F8h] [-100Ch] BYREF\n  const char *v47; // [sp+21F8h] [-Ch]\n\n  v6 = getenv(\"stationIp\", argv, envp);\n  v5 = getenv(\"CONTENT_LENGTH\", v3, v4);\n  v7 = strtol(v5, 0, 10);\n  puts(\"\\n\");\n  if ( apmib_init() )\n  {\n    memset(v46, 0, sizeof(v46));\n    if ( (unsigned int)v46 >= 0x1000 )\n      v8 = 4096;\n    else\n      v8 = v7 + 1;\n    fread(v46, 1, v8, stdin);\n    if ( !v6 )\n      getenv(\"REMOTE_ADDR\", v9, v10);\n    v11 = getenv(\"QUERY_STRING\", v9, v10);\n    v12 = v11;\n    v13 = v46;\n    if ( v11 )\n    {\n      v14 = strstr(v11, \"CSAuthUrl=\");\n      if ( v14 )\n      {\n        v13 = v45;\n        memset(v45, 0, sizeof(v45));\n        sprintf(v45, \"{\\\"topicurl\\\":\\\"setting/refineCSAuth\\\",\\\"CSAuthUrl\\\":\\\"%s\\\"}\", v14 + 10);\n      }\n      else\n      {\n        v13 = v45;\n        if ( strstr(v12, \"CSAuth=login\") )\n        {\n          memset(v45, 0, sizeof(v45));\n          sprintf(v45, \"{\\\"topicurl\\\":\\\"setting/formPostCSAuth\\\",\\\"CSAuthUrl\\\":\\\"%s\\\"}\", v46);\n        }\n        else\n        {\n          v13 = v46;\n          if ( strstr(v12, \"action=login\") )\n          {\n            v17 = strstr(v12, \"flag=1\");\n            v47 = (const char *)getenv(\"http_host\", v15, v16);\n            memset(v45, 0, sizeof(v45));\n            if ( v17 )\n            {\n              sprintf(v45, \"{\\\"topicurl\\\":\\\"setting/loginAuth\\\",\\\"loginAuthUrl\\\":\\\"%s&http_host=%s&flag=1\\\"}\", v46, v47);\n              v13 = v45;\n            }\n            else\n            {\n              v13 = v45;\n              sprintf(v45, \"{\\\"topicurl\\\":\\\"setting/loginAuth\\\",\\\"loginAuthUrl\\\":\\\"%s&http_host=%s\\\"}\", v46, v47);\n            }\n          }\n        }\n      }\n    }\n    v18 = cJSON_Parse(v13);\n    if ( v18 )\n    {\n      if ( *v13 == 91 )\n        ArrayItem = cJSON_GetArrayItem(v18, 0);\n      else\n        ArrayItem = v18;\n      v20 = *(_DWORD *)(cJSON_GetObjectItem(ArrayItem, \"topicurl\") + 16);\n      Object = cJSON_CreateObject();\n      if ( strstr(v20, \"getSysStatusCfg\") )\n      {\n        apmib_get(201, &v35);\n        sprintf(v41, \"%02x:%02x:%02x:%02x:%02x:%02x\", v35, v36, v37, v38, v39, v40);\n        String = cJSON_CreateString(v41);\n        cJSON_AddItemToObject(Object, \"lanMac\", String);\n        apmib_get(170, v41);\n        v23 = inet_ntoa(v41[0]);\n        strcpy(v41, v23);\n        v24 = cJSON_CreateString(v41);\n        v25 = \"lanIp\";\n      }\n      else\n      {\n        if ( !strstr(v20, \"getCrpcConfig\") )\n          goto LABEL_31;\n        strcpy(v41, \"ping -c 1 8.8.8.8 > /dev/null\");\n        v26 = system(v41);\n        v27 = sub_4012F8(v26 == 0);\n        Number = cJSON_CreateNumber(v27, HIDWORD(v27));\n        cJSON_AddItemToObject(Object, \"status\", Number);\n        v29 = fopen(\"/tmp/crpc_url\", \"r\");\n        v30 = v29;\n        if ( v29 )\n        {\n          fgets(v42, 100, v29);\n          fclose(v30);\n        }\n        memset(v44, 0, sizeof(v44));\n        for ( i = 0; i < strlen(v42); ++i )\n        {\n          v32 = (char)v42[i];\n          if ( v32 == 10 )\n            break;\n          v44[i] = v32;\n        }\n        apmib_get(201, &v35);\n        sprintf(v43, \"%02x:%02x:%02x:%02x:%02x:%02x\", v35, v36, v37, v38, v39, v40);\n        sprintf(v41, \"%s%s?mac=%s\", \"http://www.carystudio.com/router/wechatmanage/routerurl?url=\", v44, v43);\n        v24 = cJSON_CreateString(v41);\n        v25 = \"url\";\n      }\n      cJSON_AddItemToObject(Object, v25, v24);\nLABEL_31:\n      v33 = (const char *)cJSON_Print(Object);\n      printf(\"%s\", v33);\n      cJSON_Delete(Object);\n      cJSON_Delete(v18);\n      free(v33);\n      exit(0);\n    }\n  }\n  return -1;\n}"], "assembly": ["0x400e30: addiu   $sp, -0x2220\n0x400e34: sw      $ra, 0x2204+var_s18($sp)\n0x400e38: sw      $s5, 0x2204+var_s14($sp)\n0x400e3c: sw      $s4, 0x2204+var_s10($sp)\n0x400e40: sw      $s3, 0x2204+var_sC($sp)\n0x400e44: sw      $s2, 0x2204+var_s8($sp)\n0x400e48: sw      $s1, 0x2204+var_s4($sp)\n0x400e4c: sw      $s0, 0x2204+var_s0($sp)\n0x400e50: lui     $a0, 0x40  # '@'\n0x400e54: jal     getenv\n0x400e58: li      $a0, aStationip # \"stationIp\"\n0x400e5c: li      $a0, aContentLength # \"CONTENT_LENGTH\"\n0x400e64: jal     getenv\n0x400e68: move    $s1, $v0\n0x400e6c: move    $a1, $zero\n0x400e70: li      $a2, 0xA\n0x400e74: jal     strtol\n0x400e78: move    $a0, $v0\n0x400e7c: li      $a0, asc_401444 # \"\\n\"\n0x400e84: jal     puts\n0x400e88: move    $s2, $v0\n0x400e8c: jal     apmib_init\n0x400e90: nop\n0x400e94: beqz    $v0, loc_4012C4\n0x400e98: lw      $ra, 0x2204+var_s18($sp)\n0x400e9c: addiu   $s0, $sp, 0x2204+var_100C\n0x400ea0: move    $a0, $s0\n0x400ea4: move    $a1, $zero\n0x400ea8: jal     memset\n0x400eac: li      $a2, 0x1000\n0x400eb0: sltiu   $v1, $s0, 0x1000\n0x400eb4: beqz    $v1, loc_400ED0\n0x400eb8: lui     $v0, 0x41  # 'A'\n0x400ebc: lw      $a3, stdin\n0x400ec0: move    $a0, $s0\n0x400ec4: addiu   $a2, $s2, 1\n0x400ec8: j       loc_400EE0\n0x400ecc: li      $a1, 1\n0x400ed0: lw      $a3, stdin\n0x400ed4: move    $a0, $s0\n0x400ed8: li      $a1, 1\n0x400edc: li      $a2, 0x1000\n0x400ee0: jal     fread\n0x400ee4: nop\n0x400ee8: bnezl   $s1, loc_400F00\n0x400eec: lui     $a0, 0x40  # '@'\n0x400ef0: lui     $a0, 0x40  # '@'\n0x400ef4: jal     getenv\n0x400ef8: li      $a0, aRemoteAddr # \"REMOTE_ADDR\"\n0x400efc: lui     $a0, 0x40  # '@'\n0x400f00: jal     getenv\n0x400f04: li      $a0, aQueryString # \"QUERY_STRING\"\n0x400f08: move    $s2, $v0\n0x400f0c: beqz    $v0, loc_401024\n0x400f10: addiu   $s0, $sp, 0x2204+var_100C\n0x400f14: li      $a1, aCsauthurl # \"CSAuthUrl=\"\n0x400f1c: jal     strstr\n0x400f20: move    $a0, $v0\n0x400f24: beqz    $v0, loc_400F54\n0x400f28: move    $s1, $v0\n0x400f2c: addiu   $s0, $sp, 0x2204+var_200C\n0x400f30: move    $a0, $s0\n0x400f34: move    $a1, $zero\n0x400f38: jal     memset\n0x400f3c: li      $a2, 0x1000\n0x400f40: li      $a1, aTopicurlSettin # \"{\\\"topicurl\\\":\\\"setting/refineCSAuth\\\",\"...\n0x400f48: addiu   $a2, $s1, 0xA\n0x400f4c: j       loc_400F8C\n0x400f50: move    $a0, $s0\n0x400f54: li      $a1, aCsauthLogin # \"CSAuth=login\"\n0x400f5c: jal     strstr\n0x400f60: move    $a0, $s2\n0x400f64: beqz    $v0, loc_400F9C\n0x400f68: addiu   $s0, $sp, 0x2204+var_200C\n0x400f6c: move    $a0, $s0\n0x400f70: move    $a1, $zero\n0x400f74: jal     memset\n0x400f78: li      $a2, 0x1000\n0x400f7c: li      $a1, aTopicurlSettin_0 # \"{\\\"topicurl\\\":\\\"setting/formPostCSAuth\"...\n0x400f84: move    $a0, $s0\n0x400f88: addiu   $a2, $sp, 0x2204+var_100C\n0x400f8c: jal     sprintf\n0x400f90: nop\n0x400f94: j       loc_401024\n0x400f98: nop\n0x400f9c: li      $a1, aActionLogin # \"action=login\"\n0x400fa4: jal     strstr\n0x400fa8: move    $a0, $s2\n0x400fac: beqz    $v0, loc_401024\n0x400fb0: addiu   $s0, $sp, 0x2204+var_100C\n0x400fb4: li      $a1, aFlag1 # \"flag=1\"\n0x400fbc: jal     strstr\n0x400fc0: move    $a0, $s2\n0x400fc4: li      $a0, aHttpHost # \"http_host\"\n0x400fcc: addiu   $s1, $sp, 0x2204+var_200C\n0x400fd0: jal     getenv\n0x400fd4: move    $s0, $v0\n0x400fd8: li      $a2, 0x1000\n0x400fdc: move    $a0, $s1\n0x400fe0: move    $a1, $zero\n0x400fe4: jal     memset\n0x400fe8: sw      $v0, 0x2204+var_C($sp)\n0x400fec: addiu   $a2, $sp, 0x2204+var_100C\n0x400ff0: beqz    $s0, loc_401010\n0x400ff4: lw      $a3, 0x2204+var_C($sp)\n0x400ff8: li      $a1, aTopicurlSettin_1 # \"{\\\"topicurl\\\":\\\"setting/loginAuth\\\",\\\"l\"...\n0x401000: jal     sprintf\n0x401004: move    $a0, $s1\n0x401008: j       loc_401024\n0x40100c: move    $s0, $s1\n0x401010: li      $a1, aTopicurlSettin_2 # \"{\\\"topicurl\\\":\\\"setting/loginAuth\\\",\\\"l\"...\n0x401018: move    $a0, $s1\n0x40101c: jal     sprintf\n0x401020: move    $s0, $s1\n0x401024: jal     cJSON_Parse\n0x401028: move    $a0, $s0\n0x40102c: beqz    $v0, loc_4012C0\n0x401030: move    $s1, $v0\n0x401034: lb      $v1, 0($s0)\n0x401038: li      $v0, 0x5B  # '['\n0x40103c: bne     $v1, $v0, loc_40105C\n0x401040: lui     $s0, 0x40  # '@'\n0x401044: move    $a0, $s1\n0x401048: jal     cJSON_GetArrayItem\n0x40104c: move    $a1, $zero\n0x401050: move    $a0, $v0\n0x401054: j       loc_401064\n0x401058: addiu   $a1, $s0, (aTopicurl - 0x400000) # \"topicurl\"\n0x40105c: addiu   $a1, $s0, (aTopicurl - 0x400000) # \"topicurl\"\n0x401060: move    $a0, $s1\n0x401064: jal     cJSON_GetObjectItem\n0x401068: nop\n0x40106c: jal     cJSON_CreateObject\n0x401070: lw      $s2, 0x10($v0)\n0x401074: li      $a1, aGetsysstatuscf # \"getSysStatusCfg\"\n0x40107c: move    $a0, $s2\n0x401080: jal     strstr\n0x401084: move    $s0, $v0\n0x401088: beqz    $v0, loc_401124\n0x40108c: li      $a0, 0xC9\n0x401090: jal     apmib_get\n0x401094: addiu   $a1, $sp, 0x2204+var_21DC\n0x401098: lbu     $t1, 0x2204+var_21DA($sp)\n0x40109c: lbu     $t0, 0x2204+var_21D9($sp)\n0x4010a0: lbu     $v1, 0x2204+var_21D8($sp)\n0x4010a4: lbu     $a3, 0x2204+var_21DB($sp)\n0x4010a8: lbu     $a2, 0x2204+var_21DC($sp)\n0x4010ac: lbu     $v0, 0x2204+var_21D7($sp)\n0x4010b0: addiu   $s2, $sp, 0x2204+var_219C\n0x4010b4: li      $a1, a02x02x02x02x02 # \"%02x:%02x:%02x:%02x:%02x:%02x\"\n0x4010bc: move    $a0, $s2\n0x4010c0: sw      $t1, 0x2204+var_21F4($sp)\n0x4010c4: sw      $t0, 0x2204+var_21F0($sp)\n0x4010c8: sw      $v1, 0x2204+var_21EC($sp)\n0x4010cc: jal     sprintf\n0x4010d0: sw      $v0, 0x2204+var_21E8($sp)\n0x4010d4: jal     cJSON_CreateString\n0x4010d8: move    $a0, $s2\n0x4010dc: lui     $a1, 0x40  # '@'\n0x4010e0: move    $a2, $v0\n0x4010e4: li      $a1, aLanmac # \"lanMac\"\n0x4010e8: jal     cJSON_AddItemToObject\n0x4010ec: move    $a0, $s0\n0x4010f0: move    $a1, $s2\n0x4010f4: jal     apmib_get\n0x4010f8: li      $a0, 0xAA\n0x4010fc: jal     inet_ntoa\n0x401100: lw      $a0, 0x2204+var_219C($sp)\n0x401104: move    $a1, $v0\n0x401108: jal     strcpy\n0x40110c: move    $a0, $s2\n0x401110: jal     cJSON_CreateString\n0x401114: move    $a0, $s2\n0x401118: lui     $a1, 0x40  # '@'\n0x40111c: j       loc_401278\n0x401120: li      $a1, aLanip # \"lanIp\"\n0x401124: lui     $a1, 0x40  # '@'\n0x401128: move    $a0, $s2\n0x40112c: jal     strstr\n0x401130: li      $a1, aGetcrpcconfig # \"getCrpcConfig\"\n0x401134: beqz    $v0, loc_401284\n0x401138: addiu   $s2, $sp, 0x2204+var_219C\n0x40113c: li      $a1, aPingC18888DevN # \"ping -c 1 8.8.8.8 > /dev/null\"\n0x401144: jal     strcpy\n0x401148: move    $a0, $s2\n0x40114c: jal     system\n0x401150: move    $a0, $s2\n0x401154: jal     sub_4012F8\n0x401158: sltiu   $a0, $v0, 1\n0x40115c: move    $a1, $v1\n0x401160: jal     cJSON_CreateNumber\n0x401164: move    $a0, $v0\n0x401168: li      $a1, aStatus # \"status\"\n0x401170: move    $a2, $v0\n0x401174: jal     cJSON_AddItemToObject\n0x401178: move    $a0, $s0\n0x40117c: lui     $a0, 0x40  # '@'\n0x401180: lui     $a1, 0x40  # '@'\n0x401184: li      $a0, aTmpCrpcUrl # \"/tmp/crpc_url\"\n0x401188: jal     fopen\n0x40118c: li      $a1, aR # \"r\"\n0x401190: beqz    $v0, loc_4011B0\n0x401194: move    $s2, $v0\n0x401198: addiu   $a0, $sp, 0x2204+var_2138\n0x40119c: li      $a1, 0x64  # 'd'\n0x4011a0: jal     fgets\n0x4011a4: move    $a2, $v0\n0x4011a8: jal     fclose\n0x4011ac: move    $a0, $s2\n0x4011b0: addiu   $s2, $sp, 0x2204+var_2070\n0x4011b4: move    $a0, $s2\n0x4011b8: move    $a1, $zero\n0x4011bc: jal     memset\n0x4011c0: li      $a2, 0x64  # 'd'\n0x4011c4: move    $s3, $zero\n0x4011c8: addiu   $s4, $sp, 0x2204+var_2138\n0x4011cc: j       loc_4011E8\n0x4011d0: li      $s5, 0xA\n0x4011d4: lb      $v0, 0($v0)\n0x4011d8: beq     $v0, $s5, loc_4011FC\n0x4011dc: addu    $v1, $s2, $s3\n0x4011e0: sb      $v0, 0($v1)\n0x4011e4: addiu   $s3, 1\n0x4011e8: jal     strlen\n0x4011ec: move    $a0, $s4\n0x4011f0: sltu    $v0, $s3, $v0\n0x4011f4: bnez    $v0, loc_4011D4\n0x4011f8: addu    $v0, $s4, $s3\n0x4011fc: li      $a0, 0xC9\n0x401200: jal     apmib_get\n0x401204: addiu   $a1, $sp, 0x2204+var_21DC\n0x401208: lbu     $t1, 0x2204+var_21DA($sp)\n0x40120c: lbu     $t0, 0x2204+var_21D9($sp)\n0x401210: lbu     $v1, 0x2204+var_21D8($sp)\n0x401214: lbu     $a2, 0x2204+var_21DC($sp)\n0x401218: lbu     $a3, 0x2204+var_21DB($sp)\n0x40121c: lbu     $v0, 0x2204+var_21D7($sp)\n0x401220: addiu   $s3, $sp, 0x2204+var_20D4\n0x401224: li      $a1, a02x02x02x02x02 # \"%02x:%02x:%02x:%02x:%02x:%02x\"\n0x40122c: move    $a0, $s3\n0x401230: sw      $t1, 0x2204+var_21F4($sp)\n0x401234: sw      $t0, 0x2204+var_21F0($sp)\n0x401238: sw      $v1, 0x2204+var_21EC($sp)\n0x40123c: addiu   $s2, $sp, 0x2204+var_219C\n0x401240: jal     sprintf\n0x401244: sw      $v0, 0x2204+var_21E8($sp)\n0x401248: lui     $a1, 0x40  # '@'\n0x40124c: lui     $a2, 0x40  # '@'\n0x401250: li      $a1, aSSMacS # \"%s%s?mac=%s\"\n0x401254: li      $a2, aHttpWwwCarystu # \"http://www.carystudio.com/router/wechat\"...\n0x401258: addiu   $a3, $sp, 0x2204+var_2070\n0x40125c: move    $a0, $s2\n0x401260: jal     sprintf\n0x401264: sw      $s3, 0x2204+var_21F4($sp)\n0x401268: jal     cJSON_CreateString\n0x40126c: move    $a0, $s2\n0x401270: li      $a1, aUrl # \"url\"\n0x401278: move    $a2, $v0\n0x40127c: jal     cJSON_AddItemToObject\n0x401280: move    $a0, $s0\n0x401284: jal     cJSON_Print\n0x401288: move    $a0, $s0\n0x40128c: lui     $a0, 0x40  # '@'\n0x401290: move    $a1, $v0\n0x401294: li      $a0, aS # \"%s\"\n0x401298: jal     printf\n0x40129c: move    $s2, $v0\n0x4012a0: jal     cJSON_Delete\n0x4012a4: move    $a0, $s0\n0x4012a8: jal     cJSON_Delete\n0x4012ac: move    $a0, $s1\n0x4012b0: jal     free\n0x4012b4: move    $a0, $s2\n0x4012b8: jal     exit\n0x4012bc: move    $a0, $zero\n0x4012c0: lw      $ra, 0x2204+var_s18($sp)\n0x4012c4: lw      $s5, 0x2204+var_s14($sp)\n0x4012c8: lw      $s4, 0x2204+var_s10($sp)\n0x4012cc: lw      $s3, 0x2204+var_sC($sp)\n0x4012d0: lw      $s2, 0x2204+var_s8($sp)\n0x4012d4: lw      $s1, 0x2204+var_s4($sp)\n0x4012d8: lw      $s0, 0x2204+var_s0($sp)\n0x4012dc: li      $v0, 0xFFFFFFFF\n0x4012e0: jr      $ra\n0x4012e4: addiu   $sp, 0x2220"]}, "strcpy": {"pseudo_code": ["// attributes: thunk\nint __fastcall strcpy(int a1, int a2)\n{\n  return off_4116CC(a1, a2);\n}"], "assembly": ["0x400ae0: lui     $t7, 0x41  # 'A'\n0x400ae4: lw      $t9, off_4116CC\n0x400ae8: jr      $t9\n0x400aec: addiu   $t8, $t7, (off_4116CC - 0x410000)"]}, "printf": {"pseudo_code": ["// attributes: thunk\nint printf(const char *a1, ...)\n{\n  return off_4116D0(a1);\n}"], "assembly": ["0x400af0: lui     $t7, 0x41  # 'A'\n0x400af4: lw      $t9, off_4116D0\n0x400af8: jr      $t9\n0x400afc: addiu   $t8, $t7, (off_4116D0 - 0x410000)"]}, "fgets": {"pseudo_code": ["// attributes: thunk\nint __fastcall fgets(int a1, int a2, int a3)\n{\n  return off_4116E0(a1, a2, a3);\n}"], "assembly": ["0x400b30: lui     $t7, 0x41  # 'A'\n0x400b34: lw      $t9, off_4116E0\n0x400b38: jr      $t9\n0x400b3c: addiu   $t8, $t7, (off_4116E0 - 0x410000)"]}, "system": {"pseudo_code": ["// attributes: thunk\nint __fastcall system(int a1)\n{\n  return off_4116E8(a1);\n}"], "assembly": ["0x400b50: lui     $t7, 0x41  # 'A'\n0x400b54: lw      $t9, off_4116E8\n0x400b58: jr      $t9\n0x400b5c: addiu   $t8, $t7, (off_4116E8 - 0x410000)"]}, "sprintf": {"pseudo_code": ["// attributes: thunk\nint sprintf(int a1, const char *a2, ...)\n{\n  return off_411728(a1, a2);\n}"], "assembly": ["0x400c50: lui     $t7, 0x41  # 'A'\n0x400c54: lw      $t9, off_411728\n0x400c58: jr      $t9\n0x400c5c: addiu   $t8, $t7, (off_411728 - 0x410000)"]}};
+    
+    // 分页功能实现
+    let currentFilteredVulnItems = [];
+    let currentPage = 0;
+    const itemsPerPage = 3;
+
+    function updatePagination() {
+        const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage) || 1;
+        
+        // 调整当前页数
+        currentPage = Math.max(0, Math.min(currentPage, totalPages - 1));
+        
+        // 强制隐藏所有条目
+        document.querySelectorAll('.vuln-item').forEach(el => el.style.display = 'none');
+
+        // 仅显示当前页条目
+        currentFilteredVulnItems.slice(
+            currentPage * itemsPerPage,
+            (currentPage + 1) * itemsPerPage
+        ).forEach(({element}) => {
+            element.style.display = 'block';
+            const content = element.querySelector('[id$="-content"]');
+            if (content) {
+                
+                element.querySelector('[id$="-arrow"]').style.transform = 'rotate(180deg)';
+            }
+        });
+        
+        // 更新按钮状态
+        document.getElementById('prevPage').disabled = currentPage === 0;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages - 1;
+        document.getElementById('pageInfo').textContent = currentFilteredVulnItems.length === 0 
+            ? '无结果' 
+            : `第${currentPage + 1}页/共${totalPages}页`;
+        
+        // 隐藏所有条目并显示当前页
+        document.querySelectorAll('.vuln-item').forEach(el => el.style.display = 'none');
+        currentFilteredVulnItems.slice(
+            currentPage * itemsPerPage,
+            (currentPage + 1) * itemsPerPage
+        ).forEach(({element}) => {
+            element.style.display = 'block';
+            // 自动展开当前页条目
+            const content = element.querySelector('[id$="-content"]');
+            if (content && content.classList.contains('hidden')) {
+                
+                element.querySelector('[id$="-arrow"]').style.transform = 'rotate(180deg)';
+            }
+        });
+
+        // 滚动到顶部
+        if (currentFilteredVulnItems.length > 0) {
+            const firstVisible = currentFilteredVulnItems[currentPage * itemsPerPage]?.element;
+            firstVisible?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+    }
+
+    // 初始化搜索和分页
+    function initSearch() {
+        const vulnItems = Array.from(document.querySelectorAll('.vuln-item'));
+        currentFilteredVulnItems = vulnItems.map(element => ({
+            element,
+            text: element.innerText.toLowerCase()
+        }));
+        
+        // 搜索功能
+        document.getElementById('vulnSearch').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase().trim();
+            currentFilteredVulnItems = vulnItems
+                .map(element => ({
+                    element,
+                    text: element.innerText.toLowerCase()
+                }))
+                .filter(({text}) => text.includes(term));
+            currentPage = 0;
+            updatePagination();
+        });
+    }
+    // 折叠面板切换
+    function toggleSection(id) {
+        const content = document.getElementById(`${id}-content`);
+        const arrow = document.getElementById(`${id}-arrow`);
+        const allContents = document.querySelectorAll('[id$="-content"]');
+        const allArrows = document.querySelectorAll('[id$="-arrow"]');
+        
+        allContents.forEach(el => el !== content && el.classList.add('hidden'));
+        allArrows.forEach(el => el !== arrow && (el.style.transform = ''));
+        
+        content.classList.toggle('hidden');
+        arrow.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        !content.classList.contains('hidden') && content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initSearch();
+        // 新增初始化分页
+        currentFilteredVulnItems = Array.from(document.querySelectorAll('.vuln-item'))
+            .map(element => ({
+                element,
+                text: element.innerText.toLowerCase()
+            }));
+        updatePagination();  // 关键初始化调用
+
+        // 分页按钮事件绑定
+        document.getElementById('prevPage').addEventListener('click', () => {
+            currentPage = Math.max(0, currentPage - 1);
+            updatePagination();
+        });
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage);
+            currentPage = Math.min(totalPages - 1, currentPage + 1);
+            updatePagination();
+        });
+        document.getElementById('prevPage').addEventListener('click', () => {
+                    currentPage = Math.max(0, currentPage - 1);
+                    updatePagination();
+                });
+        document.getElementById('nextPage').addEventListener('click', () => {
+                    const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage);
+                    currentPage = Math.min(totalPages - 1, currentPage + 1);
+                    updatePagination();
+                });
+        // 函数点击交互
+        document.querySelectorAll('.function-name').forEach(func => {
+            func.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const [functionName, address] = func.dataset.function.split('@');
+                const codeData = globalCodeDict[functionName];
+                
+                if (codeData) {
+                    // 同时更新左右两列
+                    document.getElementById('pseudo-code').innerHTML = `
+                        <div class="text-secondary mb-2">📜 伪代码</div>
+                        <pre class="text-white/80">${codeData.pseudo_code.join('\n')}</pre>
+                    `;
+                    document.getElementById('assembly-code').innerHTML = `
+                        <div class="text-secondary mb-2">📜 汇编代码</div>
+                        <pre class="text-white/80">${codeData.assembly.join('\n')}</pre>
+                    `;
+                    
+                    // 更新状态信息
+                    document.getElementById('current-function').textContent = functionName;
+                    document.getElementById('code-location').innerHTML = `
+                        <i class="ri-map-pin-line"></i>
+                        <span>链路上下一调用点地址: ${address}</span>
+                    `;
+                    document.getElementById('code-status').innerHTML = `
+                        <i class="ri-terminal-box-line"></i>
+                        <span>已加载: ${functionName}</span>
+                    `;
+                    
+                    // 显示代码卡片
+                    document.getElementById('code-card').style.display = 'block';
+                }
+            });
+        });
+
+        // 代码卡片交互
+        let isDragging = false, isResizing = false;
+        let startX, startY, startWidth, startHeight, startLeft, startTop;
+        const card = document.getElementById('code-card');
+        const contentBox = card.querySelector('.glass-card');
+        const resizeHandle = card.querySelector('.resize-handle');
+
+        // 拖动处理
+        contentBox.addEventListener('mousedown', (e) => {
+            if(e.target !== resizeHandle) {
+                isDragging = true;
+                [startX, startY] = [e.clientX, e.clientY];
+                [startLeft, startTop] = [parseFloat(contentBox.style.left), parseFloat(contentBox.style.top)];
+            }
+        });
+
+        // 调整大小处理
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            [startX, startY] = [e.clientX, e.clientY];
+            [startWidth, startHeight] = [contentBox.offsetWidth, contentBox.offsetHeight];
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if(isDragging) {
+                contentBox.style.left = `${startLeft + e.clientX - startX}px`;
+                contentBox.style.top = `${startTop + e.clientY - startY}px`;
+                contentBox.style.transform = 'none';
+            }
+            if(isResizing) {
+                contentBox.style.width = `${Math.max(400, startWidth + e.clientX - startX)}px`;
+                contentBox.style.height = `${Math.max(300, startHeight + e.clientY - startY)}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = isResizing = false;
+        });
+
+        // 关闭按钮
+        document.getElementById('close-btn').addEventListener('click', () => {
+            card.style.display = 'none';
+        });
+
+        // 粒子效果初始化
+        Array.from({length: 50}).forEach(() => {
+            const particle = document.createElement('div');
+            Object.assign(particle.style, {
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `sparkle ${2 + Math.random() * 3}s infinite`
+            });
+            particle.className = 'particle';
+            document.body.appendChild(particle);
+        });
+
+        // 初始化状态栏
+        function updateCodeStatus() {
+            const pseudoLines = document.getElementById('pseudo-code').querySelector('pre').textContent.split('\n').length;
+            const assemblyLines = document.getElementById('assembly-code').querySelector('pre').textContent.split('\n').length;
+            const totalSize = new Blob([
+                document.getElementById('pseudo-code').textContent,
+                document.getElementById('assembly-code').textContent
+            ]).size / 1024;
+            
+            document.getElementById('code-lines').innerHTML = `
+                <i class="ri-numbers-line"></i>
+                <span>行数: 伪码${pseudoLines} / 汇编${assemblyLines}</span>
+            `;
+            document.getElementById('code-size').innerHTML = `
+                <i class="ri-database-2-line"></i>
+                <span>大小: ${totalSize.toFixed(2)} KB</span>
+            `;
+        }
+        updateCodeStatus();
+    });
+
+    
+    </script>
+    
+</body>
+</html>
+    
