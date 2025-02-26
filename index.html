@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HRP Auto Analyze 魔法分析之星</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :where([class^="ri-"])::before { content: "\f3c2"; }
+      @keyframes glow {
+      0% { box-shadow: 0 0 5px #00ffea, 0 0 10px #ff2a6d, 0 0 15px #05d9e8; }
+      50% { box-shadow: 0 0 10px #ff2a6d, 0 0 20px #05d9e8, 0 0 30px #00ffea; }
+      100% { box-shadow: 0 0 5px #05d9e8, 0 0 10px #00ffea, 0 0 15px #ff2a6d; }
+      }
+      .magic-card {
+      background: linear-gradient(135deg, rgba(18, 18, 32, 0.95) 0%, rgba(28, 28, 45, 0.95) 100%);
+      border: 2px solid rgba(5, 217, 232, 0.3);
+      animation: glow 3s infinite;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+      }
+      .magic-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(5, 217, 232, 0.1) 3px,
+      rgba(5, 217, 232, 0.1) 3px
+      );
+      animation: scan 5s linear infinite;
+      }
+      @keyframes scan {
+      0% { transform: translateY(-50%); }
+      100% { transform: translateY(0); }
+      }
+      .mecha-border {
+      clip-path: polygon(0% 15%, 15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%);
+      border: 2px solid rgba(255, 42, 109, 0.5);
+      }
+      .gradient-text {
+      background: linear-gradient(45deg, #ff2a6d, #05d9e8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 10px rgba(5, 217, 232, 0.5);
+      font-family: 'Orbitron', sans-serif;
+      }
+      body {
+      font-family: 'Share Tech Mono', monospace;
+      }
+      h1, h2, h3, h4, h5, h6 {
+      font-family: 'Orbitron', sans-serif;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#ff2a6d",
+              secondary: "#05d9e8",
+            },
+            borderRadius: {
+              none: "0px",
+              sm: "4px",
+              DEFAULT: "8px",
+              md: "12px",
+              lg: "16px",
+              xl: "20px",
+              "2xl": "24px",
+              "3xl": "32px",
+              full: "9999px",
+              button: "8px",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="bg-[#0a0a14] min-h-screen text-white bg-[url('https://public.readdy.ai/ai/img_res/219c95f61121269300a45f86e0480b9a.jpg')] bg-fixed bg-cover bg-center bg-no-repeat"
+  >
+    <nav
+      class="fixed top-0 w-full bg-[rgba(10,10,20,0.95)] backdrop-blur-md border-b border-[rgba(5,217,232,0.2)] z-50"
+    >
+      <div class="container mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i class="ri-shield-star-line text-primary text-2xl"></i>
+            <span class="text-2xl font-['Pacifico'] gradient-text"
+              >HRP Auto Analyze</span
+            >
+          </div>
+          <div class="flex items-center space-x-6">
+            <a href="https://github.com/hexian2001/HRP_Auto_Analyze">
+                <button
+                  class="px-4 py-2 bg-primary/10 border border-primary/30 rounded-button hover:bg-primary/20 transition-all"
+                >
+                  <i class="ri-download-line mr-2"></i>下载
+                </button>
+              </a>
+              
+              <a href="https://github.com/hexian2001/">
+                <button
+                  class="px-4 py-2 bg-secondary/10 border border-secondary/30 rounded-button hover:bg-secondary/20 transition-all"
+                >
+                  <i class="ri-github-line mr-2"></i>GitHub
+                </button>
+              </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <main class="container mx-auto px-6 pt-24">
+      <section class="text-center mb-16">
+        <h1
+          class="text-6xl font-bold mb-4 gradient-text tracking-wider"
+          style="text-shadow: 0 0 20px rgba(255,42,109,0.8), 0 0 40px rgba(5,217,232,0.6);"
+        >
+          HRP Auto Analyze 魔法分析之星
+        </h1>
+        <p
+          class="text-gray-200 max-w-2xl mx-auto text-lg tracking-wide font-medium"
+          style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;"
+        >
+          集成了污点反向溯源调用链追踪、LLM智能分析、可视化漏洞报告等强大功能的新一代智能漏洞分析工具
+        </p>
+        <p
+          class="text-lg text-secondary mt-4 opacity-80"
+          style="text-shadow: 0 0 15px rgba(5,217,232,0.8), 0 0 30px rgba(5,217,232,0.6), 0 0 45px rgba(5,217,232,0.4); animation: pulse 2s infinite;"
+        >
+          Powered by HRP@Nepnep
+          <br>
+          支持我就请给我个start吧~
+        </p>
+        <style>
+          @keyframes pulse {
+          0% { opacity: 0.8; }
+          50% { opacity: 1; }
+          100% { opacity: 0.8; }
+          }
+        </style>
+      </section>
+      <section
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
+      >
+        <div
+          class="magic-card p-6 rounded-lg transform hover:scale-105 transition-all"
+        >
+          <div class="flex items-center mb-4">
+            <div
+              class="w-12 h-12 flex items-center justify-center bg-primary/20 rounded-full"
+            >
+              <i class="ri-radar-line text-2xl text-primary"></i>
+            </div>
+            <h3 class="ml-4 text-xl font-semibold">智能调用链追踪</h3>
+          </div>
+          <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+            采用LLM智能化结汇汇编与伪代码上下分析，自动分析代码调用关系，精准定位漏洞源头
+        </p>
+        </div>
+        <div
+          class="magic-card p-6 rounded-lg transform hover:scale-105 transition-all"
+        >
+          <div class="flex items-center mb-4">
+            <div
+              class="w-12 h-12 flex items-center justify-center bg-primary/20 rounded-full"
+            >
+              <i class="ri-eye-line text-2xl text-primary"></i>
+            </div>
+            <h3 class="ml-4 text-xl font-semibold">双重视觉呈现</h3>
+          </div>
+          <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+            结合图形化界面和代码视图，让漏洞分析更直观清晰
+          </p>
+        </div>
+        <div
+          class="magic-card p-6 rounded-lg transform hover:scale-105 transition-all"
+        >
+          <div class="flex items-center mb-4">
+            <div
+              class="w-12 h-12 flex items-center justify-center bg-primary/20 rounded-full"
+            >
+              <i class="ri-shield-check-line text-2xl text-primary"></i>
+            </div>
+            <h3 class="ml-4 text-xl font-semibold">深度威胁建模</h3>
+          </div>
+          <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">构建完整的威胁模型，预测潜在安全风险</p>
+        </div>
+      </section>
+      <section class="mb-16">
+        <div class="magic-card p-8 rounded-lg">
+          <h2 class="text-2xl font-bold mb-6 gradient-text">安装指南</h2>
+          <div class="space-y-4">
+            <div class="flex items-start space-x-4">
+              <div
+                class="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full mt-1"
+              >
+                <span class="text-primary">1</span>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">环境准备</h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">确保系统已安装 Python 3.12+ 版本与IDA pro 9.0</p>
+              </div>
+            </div>
+            <div class="flex items-start space-x-4">
+              <div
+                class="w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full mt-1"
+              >
+                <span class="text-primary">2</span>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-2">安装依赖</h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                    找到你的IDA python 所在路径 例如 👇
+                    <br>
+                    C:\Python312\python.exe  -m pip install openai tenacity
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="mb-16">
+        <div class="magic-card p-8 rounded-lg">
+          <h2 class="text-2xl font-bold mb-6 gradient-text">使用说明</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-4">
+              <h3 class="text-xl font-semibold mb-4">基础功能</h3>
+              <ul class="space-y-2 text-gray-400">
+                <li class="flex items-center" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  <i class="ri-checkbox-circle-line text-primary mr-2" ></i>
+                  自动扫描代码漏洞
+                </li>
+                <li class="flex items-center" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  <i class="ri-checkbox-circle-line text-primary mr-2"></i>
+                  生成分析报告
+                </li>
+              </ul>
+            </div>
+            <div class="space-y-4">
+              <h3 class="text-xl font-semibold mb-4">高级功能</h3>
+              <ul class="space-y-2 text-gray-400">
+                <li class="flex items-center" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  <i class="ri-checkbox-circle-line text-primary mr-2"></i>
+                  自定义扫描规则
+                </li>
+                <li class="flex items-center" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  <i class="ri-checkbox-circle-line text-primary mr-2"></i>
+                  可视化链路上函数伪代码与汇编
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="mb-16">
+        <div class="magic-card p-8 rounded-lg">
+          <h2 class="text-2xl font-bold mb-6 gradient-text">技术特色</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="p-4 bg-[rgba(255,105,180,0.1)] rounded-lg" >
+              <h4 class="font-semibold mb-2">AI 驱动</h4>
+              <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">基于LLM智能分析</p>
+            </div>
+            <div class="p-4 bg-[rgba(65,105,225,0.1)] rounded-lg">
+              <h4 class="font-semibold mb-2">高性能</h4>
+              <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">优化的扫描引擎，快速完成分析任务</p>
+            </div>
+            <div class="p-4 bg-[rgba(255,105,180,0.1)] rounded-lg">
+              <h4 class="font-semibold mb-2">可扩展</h4>
+              <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">支持自定义规则和插件开发</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="mb-16">
+        <div class="magic-card p-8 rounded-lg">
+          <h2 class="text-2xl font-bold mb-6 gradient-text">分析报告样例</h2>
+          
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>🪄二进制安全分析报告🪄 ——Power by HRP@Nepnep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary:"#8B5CF6", secondary:"#C4B5FD" },
+                    borderRadius: { DEFAULT:"8px", md:"12px", lg:"16px", full:"9999px" }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+    
+    <style>
+    @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+    @keyframes sparkle { 0%,100% { opacity:0 } 50% { opacity:1 } }
+    @keyframes scanline { 0% { transform:translateY(-100%) } 100% { transform:translateY(100%) } }
+    #pseudo-code::-webkit-scrollbar,
+    #assembly-code::-webkit-scrollbar {
+        width: 8px;
+        background: rgba(0,0,0,0.2);
+    }
+    
+    .vuln-section {
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    }
+
+    #pseudo-code::-webkit-scrollbar-thumb,
+    #assembly-code::-webkit-scrollbar-thumb {
+        background: #8B5CF6;
+        border-radius: 4px;
+    }
+
+    #pseudo-code::-webkit-scrollbar-track,
+    #assembly-code::-webkit-scrollbar-track {
+        background: rgba(139,92,246,0.1);
+    }
+    .magic-card {
+        background: rgba(139, 92, 246, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(31,38,135,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .magic-card::before {
+        content: '';
+        position: absolute;
+        top:0; left:0; right:0;
+        height:2px;
+        background: linear-gradient(90deg,transparent,rgba(139,92,246,0.8),transparent);
+        animation: scanline 2s linear infinite;
+    }
+    .cyber-border {
+        border:2px solid transparent;
+        background-image: linear-gradient(black,black),linear-gradient(135deg,rgba(139,92,246,0.8) 0%,rgba(196,181,253,0.8) 100%);
+        background-origin: border-box;
+        background-clip: padding-box,border-box;
+    }
+    .particle {
+        position:absolute;
+        width:3px; height:3px;
+        background:rgba(255,255,255,0.5);
+        border-radius:50%;
+        pointer-events:none;
+    }
+    .glass-card {
+        background:rgba(31,41,55,0.9);
+        border:1px solid rgba(139,92,246,0.3);
+        backdrop-filter:blur(10px);
+    }
+    .resize-handle {
+        position:absolute;
+        right:0; bottom:0;
+        width:20px; height:20px;
+        cursor:nwse-resize;
+        background:#8B5CF6;
+        border-radius:4px 0 0 0;
+    }
+    .vuln-detail-card {
+        background:rgba(255,255,255,0.05);
+        border-left:3px solid #8B5CF6;
+        padding:1rem;
+        margin:1rem 0;
+    }
+    .call-chain {
+        padding-left:1.5rem;
+        border-left:2px solid rgba(139,92,246,0.5);
+        margin:1rem 0;
+    }
+    .function-name {
+        cursor:pointer;
+        transition:all 0.3s ease;
+    }
+    .function-name:hover {
+        color:#C4B5FD !important;
+        text-shadow:0 0 10px rgba(139,92,246,0.5);
+    }
+    </style>
+    
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8 min-h-screen">
+        <!-- 头部 -->
+        <div class="text-center mb-12">
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+            <h1 class="text-4xl font-bold mb-4 relative inline-block">
+                <span class="relative z-10">🪄二进制安全分析报告🪄</span>
+                <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-purple-400 opacity-50 blur"></div>
+            </h1>
+            <p class="text-lg opacity-80">Power by HRP@Nepnep</p>
+            <br>
+            <p class="text-lg opacity-80">🕛报告生成时间：2025-02-26 14:02:49</p>
+
+            <div class="flex items-center justify-center gap-4 mt-4">
+                <a href="https://github.com/hexian2001" class="flex items-center gap-2 text-white/80 hover:text-white">
+                    <i class="ri-github-line"></i>
+                    Visit My GitHub
+                </a>
+                <span class="text-white/60" id="report-time"></span>
+            </div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div class="grid gap-8 max-w-6xl mx-auto">
+            <!-- 风险概况 -->
+            <div class="magic-card rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <i class="ri-error-warning-line text-yellow-400"></i>
+                        风险概况
+                    </h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">高危漏洞数量</p>
+                        <p class="text-3xl font-bold text-red-400">4</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">中危漏洞数量</p>
+                        <p class="text-3xl font-bold text-yellow-400">2</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">低危漏洞数量</p>
+                        <p class="text-3xl font-bold text-green-400">0</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">总漏洞数量</p>
+                        <p class="text-3xl font-bold text-blue-400">6</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 漏洞详情 -->
+                <div class="magic-card rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">漏洞详情</h2>
+                        <div class="relative w-full md:w-64">
+                            <input 
+                                type="text" 
+                                id="vulnSearch" 
+                                placeholder="搜索漏洞..." 
+                                class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-500 transition-all"
+                            >
+                            <i class="ri-search-line absolute right-3 top-3 text-white/50"></i>
+                        </div>
+                    </div>
+                    <!-- 滚动容器 -->
+                    <div class="overflow-x-auto">
+                        <div class="space-y-6 min-w-[600px]" id="vulnContainer">
+                            
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 1: printf</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-119</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln1')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln1-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln1-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">程序在处理用户输入时，未能正确验证或限制输入长度，导致可能发生缓冲区溢出。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        攻击者可以通过构造恶意输入，使得格式化字符串中的%s参数指向任意内存地址，从而泄露敏感信息或覆盖关键内存区域。例如，攻击者可以将环境变量设置为包含恶意格式化字符串，然后通过调用printf函数触发漏洞。
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401978">
+                                main@0x401978
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sub_4012BC@0x401360">
+                                sub_4012BC@0x401360
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sub_400FE0@0x401018">
+                                sub_400FE0@0x401018
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="printf@0x400c20">
+                                printf@0x400c20
+                            </span>
+                        </div>
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401b60">
+                                main@0x401b60
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="printf@0x400c20">
+                                printf@0x400c20
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">对所有涉及格式化字符串的操作进行严格的权限控制，避免敏感信息泄露。</li><li class="text-white/80">使用安全的替代函数，如使用snprintf代替sprintf，确保不会超出缓冲区边界。</li><li class="text-white/80">确保所有用户输入都经过严格的长度检查和格式验证，避免直接使用未经验证的输入作为格式化字符串。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 2: system</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-78</span>
+                            <span>CVSS: 7.2</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln2')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln2-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln2-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">通过环境变量或用户输入直接构造并执行操作系统命令，可能导致命令注入攻击。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        攻击者可以通过环境变量或用户输入（如QUERY_STRING）构造恶意命令，从而在服务器上执行任意代码。例如，如果攻击者能够控制QUERY_STRING的内容，他们可以注入如'; rm -rf /'这样的命令来删除文件系统。<br>具体来说，在main函数中，通过sprintf函数将环境变量QUERY_STRING的内容拼接到命令字符串中，然后直接传递给system函数执行。由于没有对QUERY_STRING的内容进行有效的过滤或验证，攻击者可以注入任意命令。
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x4018c0">
+                                main@0x4018c0
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="system@0x400ca0">
+                                system@0x400ca0
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">对用户输入进行严格的验证和过滤，确保输入不包含危险字符或命令。</li><li class="text-white/80">避免直接使用用户输入构造命令，考虑使用安全的API或库来执行命令。</li><li class="text-white/80">使用白名单机制，只允许特定的命令或参数。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 3: strcpy</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-120</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln3')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln3-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln3-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">strcpy函数在复制字符串时没有对目标缓冲区的大小进行检查，可能导致缓冲区溢出。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        攻击者可以通过构造一个足够长的源字符串，使其超过目标缓冲区的大小，从而导致缓冲区溢出。这将使得攻击者能够覆盖相邻的内存区域，包括返回地址等关键数据。<br>在调用链中，strcpy函数被多次调用，每次调用都可能存在缓冲区溢出的风险。例如，在main函数中，strcpy被用于复制环境变量中的字符串，而该字符串的长度是不可控的。
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401a50">
+                                main@0x401a50
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sub_401724@0x401758">
+                                sub_401724@0x401758
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="strcpy@0x400c00">
+                                strcpy@0x400c00
+                            </span>
+                        </div>
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x4018e8">
+                                main@0x4018e8
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="strcpy@0x400c00">
+                                strcpy@0x400c00
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">考虑使用边界检查工具，如AddressSanitizer，来检测潜在的缓冲区溢出问题。</li><li class="text-white/80">在调用strcpy之前，显式地检查源字符串的长度，并确保其不超过目标缓冲区的大小。</li><li class="text-white/80">使用安全版本的字符串函数，如strncpy或snprintf，确保目标缓冲区不会被超出。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 4: access</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-367</span>
+                            <span>CVSS: 5.0</span>
+                            <span class="text-yellow-400 font-medium">中危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln4')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln4-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln4-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">access函数用于检查文件访问权限，但其参数未经充分验证，可能导致竞态条件。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        攻击者可以通过修改环境变量或文件路径，使得access函数检查的文件与实际打开的文件不一致，从而绕过文件访问权限检查。例如，攻击者可以在access函数检查文件权限后，但在实际打开文件之前，修改文件路径，导致后续的文件操作（如fopen）打开的是一个不同的文件，这可能导致敏感信息泄露或恶意代码执行。
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401978">
+                                main@0x401978
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sub_4012BC@0x401320">
+                                sub_4012BC@0x401320
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="access@0x400e00">
+                                access@0x400e00
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">确保在调用access函数之后立即打开文件，并且不要在此期间修改文件路径。如果需要多次检查文件权限，则应重新调用access函数。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 5: sprintf</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-119</span>
+                            <span>CVSS: 7.5</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln5')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln5-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln5-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">格式化字符串漏洞，攻击者可以通过控制输入的格式化字符串来读取任意内存或者覆盖任意内存。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        攻击者可以通过控制环境变量QUERY_STRING的内容来影响sprintf函数的参数。如果攻击者能够控制该字符串，则可以注入恶意格式化字符串，从而导致任意内存读取或写入。<br>例如，攻击者可以构造一个包含格式化字符串（如%s）的QUERY_STRING，然后通过系统调用执行命令，这可能导致任意内存泄露或覆盖。<br>在调用链中，攻击者可以通过控制QUERY_STRING的值来影响sprintf函数的参数，进而导致潜在的安全问题。
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401978">
+                                main@0x401978
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sub_4012BC@0x40134c">
+                                sub_4012BC@0x40134c
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sprintf@0x400dc0">
+                                sprintf@0x400dc0
+                            </span>
+                        </div>
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x4018b0">
+                                main@0x4018b0
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sprintf@0x400dc0">
+                                sprintf@0x400dc0
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">使用安全的替代函数，如snprintf，限制格式化字符串的长度和内容。</li><li class="text-white/80">对输入的QUERY_STRING进行严格的长度和内容检查，防止恶意输入。</li><li class="text-white/80">确保所有用户提供的输入都经过严格的验证和清理，特别是对于格式化字符串的参数。</li><li class="text-white/80">在使用sprintf之前，确保目标缓冲区有足够的空间，并且不要直接使用用户输入作为格式化字符串。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 6: strtok</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>CWE-120</span>
+                            <span>CVSS: 6.5</span>
+                            <span class="text-yellow-400 font-medium">中危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln6')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln6-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln6-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">strtok函数在处理字符串分割时，如果输入字符串长度超过缓冲区大小，可能会导致堆栈溢出或缓冲区溢出。</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        攻击者可以通过构造一个特别设计的输入字符串，使其长度超过缓冲区大小，从而触发堆栈溢出或缓冲区溢出。具体来说，在调用链strtok_chain_1和strtok_chain_2中，strtok函数被多次调用且没有对输入字符串长度进行有效验证，这使得攻击者有机会通过精心构造的输入字符串来覆盖堆栈或缓冲区的内容。
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401a50">
+                                main@0x401a50
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="sub_401724@0x401748">
+                                sub_401724@0x401748
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="strtok@0x400d30">
+                                strtok@0x400d30
+                            </span>
+                        </div>
+                        <div class="tree-node group flex items-center min-w-max">
+                            
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="main@0x401900">
+                                main@0x401900
+                            </span><span class="text-purple-400 mx-2">›</span>
+                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                                data-function="strtok@0x400d30">
+                                strtok@0x400d30
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">在调用strtok之前，确保输入字符串的长度不超过缓冲区大小。例如，可以在调用strtok之前使用strlen或其他方法检查输入字符串的长度，并在必要时截断字符串。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+          <!-- 移除外层vuln-section包裹 -->
+                        </div>
+                    </div>
+
+                    <div class="pagination-controls flex items-center justify-center gap-4 mt-4">
+                        <button id="prevPage" class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>上一页</button>
+                        <span id="pageInfo" class="text-white/80">第1页/共3页</span>
+                        <button id="nextPage" class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed">下一页</button>
+                    </div>
+                </div>
+        </div>
+
+        <!-- 代码查看卡片（左右分栏版） -->
+        <div id="code-card" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+            <div class="glass-card rounded-xl p-6 max-w-6xl w-full h-[90vh] flex flex-col" style="min-width: 800px; min-height: 500px;">
+                <div class="resize-handle"></div>
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-purple-400/30">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="ri-code-s-slash-line"></i>
+                        代码解析 - <span id="current-function" class="text-purple-300"></span>
+                    </h3>
+                    <button id="close-btn" class="text-2xl hover:text-purple-400 transition-transform hover:scale-125">
+                        ×
+                    </button>
+                </div>
+                
+                <!-- 左右分栏布局 -->
+                <div class="flex-1 grid grid-cols-2 gap-6 overflow-hidden" style="min-height: 400px;">
+                    <!-- 伪代码区域 -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <div id="pseudo-code" class="flex-1 overflow-auto font-mono text-sm p-4 bg-black/20 rounded-lg">
+                            <div class="mb-2 flex items-center gap-2 text-purple-300">
+                                <i class="ri-file-code-line"></i>
+                                <span>伪代码分析</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 汇编代码区域 -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <div id="assembly-code" class="flex-1 overflow-auto font-mono text-sm p-4 bg-black/20 rounded-lg">
+                            <div class="text-secondary mb-4 flex items-center gap-2">
+                                <i class="ri-information-line"></i>
+                                <span>点击调用链中的函数查看详细代码</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态栏 -->
+                <div class="mt-4 pt-2 border-t border-purple-400/30 text-sm text-white/60 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span id="code-status" class="flex items-center gap-2">
+                            <i class="ri-terminal-box-line"></i>
+                            <span>就绪</span>
+                        </span>
+                        <span id="code-location" class="flex items-center gap-2">
+                            <i class="ri-map-pin-line"></i>
+                            <span>链路上下一调用地址: 0x0000</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+    const globalCodeDict = {"main": {"pseudo_code": ["int __fastcall main(int argc, const char **argv, const char **envp)\n{\n  int v3; // $v0\n  int v4; // $v0\n  int v5; // $v0\n  int v6; // $v0\n  int v7; // $v0\n  const char *v8; // $v0\n  _DWORD *v9; // $v0\n  const char *v10; // $v0\n  int Object; // [sp+20h] [+20h]\n  int i; // [sp+24h] [+24h]\n  const char *v14; // [sp+28h] [+28h]\n  int v15; // [sp+2Ch] [+2Ch]\n  int v16; // [sp+30h] [+30h]\n  int v17; // [sp+34h] [+34h]\n  char v18[1024]; // [sp+3Ch] [+3Ch] BYREF\n  _BYTE v19[1024]; // [sp+43Ch] [+43Ch] BYREF\n  char v20[128]; // [sp+83Ch] [+83Ch] BYREF\n  _BYTE v21[20484]; // [sp+8BCh] [+8BCh] BYREF\n  char v22[256]; // [sp+58C0h] [+58C0h] BYREF\n  _DWORD v23[38]; // [sp+59C0h] [+59C0h] BYREF\n  _BYTE v24[512]; // [sp+5A58h] [+5A58h] BYREF\n  _BYTE v25[512]; // [sp+5C58h] [+5C58h] BYREF\n  char v26[256]; // [sp+5E58h] [+5E58h] BYREF\n  char v27[132]; // [sp+5F58h] [+5F58h] BYREF\n\n  memset(v18, 0, sizeof(v18));\n  memset(v19, 0, sizeof(v19));\n  memset(v21, 0, 20481);\n  memset(v22, 0, sizeof(v22));\n  v15 = 0;\n  v14 = (const char *)getenv(\"QUERY_STRING\");\n  memset(v24, 0, sizeof(v24));\n  memset(v25, 0, sizeof(v25));\n  sprintf(v24, \"echo QUERY_STRING:%s >/tmp/download\", v14);\n  system(v24);\n  v3 = strchr(v14, 61);\n  strcpy(v25, v3 + 1);\n  v4 = strtok(v25, \"/\");\n  strcpy(v26, v4);\n  strtok(0, \"/\");\n  v5 = strtok(0, \"/\");\n  strcpy(v27, v5);\n  Object = cJSON_CreateObject();\n  if ( sub_4012BC(v26, v27, Object) < 0 )\n  {\n    puts(\"HTTP/1.1 200 OK\\nContent-type: text/html\\nPragma: no-cache\\nCache-Control: no-cache\\n\");\n    puts(\"Couldn't find to upgrade the firmware\");\n    sprintf(v24, \"echo Couldn't find to upgrade the firmware >>/tmp/download\", v22);\n    system(v24);\n    return 0;\n  }\n  v6 = sub_401138(Object, \"path\", &dword_401EE4);\n  strcpy(v18, v6);\n  v7 = sub_401138(Object, \"path\", &dword_401EE4);\n  strcpy(v19, v7);\n  sub_401724(v19, v20);\n  v8 = (const char *)sub_401138(Object, \"path\", &dword_401EE4);\n  sprintf(v24, \"echo appId:%s versionId:%s path:%s fileName:%s >>/tmp/download\", v26, v27, v8, v20);\n  system(v24);\n  memset(v23, 0, sizeof(v23));\n  v17 = fopen(v18, \"r\");\n  if ( !v17 )\n  {\n    puts(\"HTTP/1.1 200 OK\\nContent-type: text/html\\nPragma: no-cache\\nCache-Control: no-cache\\n\");\n    v9 = (_DWORD *)_errno_location();\n    v10 = (const char *)strerror(*v9);\n    sprintf(v22, \"Can't fopen %s: %s\\n\", v18, v10);\n    printf(\"download errmsg:%s \\n\", v22);\n    sprintf(v24, \"echo err_msg:%s >>/tmp/download\", v22);\n    system(v24);\n    return 0;\n  }\n  stat(v18, v23);\n  sprintf(v24, \"echo Content-Length:%ld >>/tmp/download\", v23[13]);\n  system(v24);\n  puts(\"HTTP/1.1 200 OK\\r\");\n  puts(\"Content-Type: application/octet-stream\\r\");\n  fprintf(stdout, \"Content-Length: %ld\\r\\n\", v23[13]);\n  fprintf(stdout, \"Content-Disposition: attachment; filename=\\\"%s\\\"\\r\\n\", v20);\n  puts(\"Cache-control: max-age=2592000\\r\");\n  puts(\"Connection: keep-alive\\r\");\n  puts(\"keep-Alive: timeout=5, max=100\\r\\n\\r\");\n  while ( 1 )\n  {\n    v16 = fread(v21, 1, 20480, v17);\n    if ( v16 <= 0 )\n      break;\n    sub_401200(v21, v16, stdout);\n    v15 += v16;\n    sprintf(v24, \"echo count:%ld >>/tmp/download\", v16);\n    system(v24);\n    usleep(100000);\n  }\n  sprintf(v24, \"echo counts:%ld >>/tmp/download\", v15);\n  system(v24);\n  for ( i = 0; i < 5; ++i )\n    sleep(1);\n  fclose(v17);\n  cJSON_Delete(Object);\n  return 0;\n}"], "assembly": ["0x4017b8: addiu   $sp, -0x5FE8\n0x4017bc: sw      $ra, 0x5FDC+var_s8($sp)\n0x4017c0: sw      $fp, 0x5FDC+var_s4($sp)\n0x4017c4: sw      $s0, 0x5FDC+var_s0($sp)\n0x4017c8: move    $fp, $sp\n0x4017cc: sw      $a0, 0x5FDC+arg_0($fp)\n0x4017d0: sw      $a1, 0x5FDC+arg_4($fp)\n0x4017d4: addiu   $v1, $fp, 0x5FDC+var_5FA0\n0x4017d8: li      $v0, 0x400\n0x4017dc: move    $a0, $v1\n0x4017e0: move    $a1, $zero\n0x4017e4: move    $a2, $v0\n0x4017e8: jal     memset\n0x4017ec: nop\n0x4017f0: addiu   $v1, $fp, 0x5FDC+var_5BA0\n0x4017f4: li      $v0, 0x400\n0x4017f8: move    $a0, $v1\n0x4017fc: move    $a1, $zero\n0x401800: move    $a2, $v0\n0x401804: jal     memset\n0x401808: nop\n0x40180c: addiu   $v1, $fp, 0x5FDC+var_5720\n0x401810: li      $v0, 0x5001\n0x401814: move    $a0, $v1\n0x401818: move    $a1, $zero\n0x40181c: move    $a2, $v0\n0x401820: jal     memset\n0x401824: nop\n0x401828: addiu   $v1, $fp, 0x5FDC+var_71C\n0x40182c: li      $v0, 0x100\n0x401830: move    $a0, $v1\n0x401834: move    $a1, $zero\n0x401838: move    $a2, $v0\n0x40183c: jal     memset\n0x401840: nop\n0x401844: sw      $zero, 0x5FDC+var_5FAC($fp)\n0x401848: sw      $zero, 0x5FDC+var_5FB0($fp)\n0x40184c: lui     $v0, 0x40  # '@'\n0x401850: addiu   $a0, $v0, (aQueryString - 0x400000) # \"QUERY_STRING\"\n0x401854: jal     getenv\n0x401858: nop\n0x40185c: sw      $v0, 0x5FDC+var_5FB4($fp)\n0x401860: addiu   $v1, $fp, 0x5FDC+var_584\n0x401864: li      $v0, 0x200\n0x401868: move    $a0, $v1\n0x40186c: move    $a1, $zero\n0x401870: move    $a2, $v0\n0x401874: jal     memset\n0x401878: nop\n0x40187c: addiu   $v1, $fp, 0x5FDC+var_384\n0x401880: li      $v0, 0x200\n0x401884: move    $a0, $v1\n0x401888: move    $a1, $zero\n0x40188c: move    $a2, $v0\n0x401890: jal     memset\n0x401894: nop\n0x401898: li      $v0, aEchoQueryStrin # \"echo QUERY_STRING:%s >/tmp/download\"\n0x4018a0: addiu   $v1, $fp, 0x5FDC+var_584\n0x4018a4: move    $a0, $v1\n0x4018a8: move    $a1, $v0\n0x4018ac: lw      $a2, 0x5FDC+var_5FB4($fp)\n0x4018b0: jal     sprintf\n0x4018b4: nop\n0x4018b8: addiu   $v0, $fp, 0x5FDC+var_584\n0x4018bc: move    $a0, $v0\n0x4018c0: jal     system\n0x4018c4: nop\n0x4018c8: lw      $a0, 0x5FDC+var_5FB4($fp)\n0x4018cc: li      $a1, 0x3D  # '='\n0x4018d0: jal     strchr\n0x4018d4: nop\n0x4018d8: addiu   $v0, 1\n0x4018dc: addiu   $v1, $fp, 0x5FDC+var_384\n0x4018e0: move    $a0, $v1\n0x4018e4: move    $a1, $v0\n0x4018e8: jal     strcpy\n0x4018ec: nop\n0x4018f0: addiu   $v0, $fp, 0x5FDC+var_384\n0x4018f4: move    $a0, $v0\n0x4018f8: lui     $v0, 0x40  # '@'\n0x4018fc: addiu   $a1, $v0, (asc_401F64 - 0x400000) # \"/\"\n0x401900: jal     strtok\n0x401904: nop\n0x401908: addiu   $v1, $fp, 0x5FDC+var_184\n0x40190c: move    $a0, $v1\n0x401910: move    $a1, $v0\n0x401914: jal     strcpy\n0x401918: nop\n0x40191c: move    $a0, $zero\n0x401920: lui     $v0, 0x40  # '@'\n0x401924: addiu   $a1, $v0, (asc_401F64 - 0x400000) # \"/\"\n0x401928: jal     strtok\n0x40192c: nop\n0x401930: move    $a0, $zero\n0x401934: lui     $v0, 0x40  # '@'\n0x401938: addiu   $a1, $v0, (asc_401F64 - 0x400000) # \"/\"\n0x40193c: jal     strtok\n0x401940: nop\n0x401944: addiu   $v1, $fp, 0x5FDC+var_84\n0x401948: move    $a0, $v1\n0x40194c: move    $a1, $v0\n0x401950: jal     strcpy\n0x401954: nop\n0x401958: jal     cJSON_CreateObject\n0x40195c: nop\n0x401960: sw      $v0, 0x5FDC+var_5FBC($fp)\n0x401964: addiu   $v1, $fp, 0x5FDC+var_184\n0x401968: addiu   $v0, $fp, 0x5FDC+var_84\n0x40196c: move    $a0, $v1\n0x401970: move    $a1, $v0\n0x401974: lw      $a2, 0x5FDC+var_5FBC($fp)\n0x401978: jal     sub_4012BC\n0x40197c: nop\n0x401980: bgez    $v0, loc_4019E0\n0x401984: nop\n0x401988: lui     $v0, 0x40  # '@'\n0x40198c: addiu   $a0, $v0, (aHttp11200OkCon - 0x400000) # \"HTTP/1.1 200 OK\\nContent-type: text/htm\"...\n0x401990: jal     puts\n0x401994: nop\n0x401998: lui     $v0, 0x40  # '@'\n0x40199c: addiu   $a0, $v0, (aCouldnTFindToU - 0x400000) # \"Couldn't find to upgrade the firmware\"\n0x4019a0: jal     puts\n0x4019a4: nop\n0x4019a8: lui     $v0, 0x40  # '@'\n0x4019ac: addiu   $v1, $v0, (aEchoCouldnTFin - 0x400000) # \"echo Couldn't find to upgrade the firmw\"...\n0x4019b0: addiu   $a0, $fp, 0x5FDC+var_584\n0x4019b4: addiu   $v0, $fp, 0x5FDC+var_71C\n0x4019b8: move    $a1, $v1\n0x4019bc: move    $a2, $v0\n0x4019c0: jal     sprintf\n0x4019c4: nop\n0x4019c8: addiu   $v0, $fp, 0x5FDC+var_584\n0x4019cc: move    $a0, $v0\n0x4019d0: jal     system\n0x4019d4: nop\n0x4019d8: j       loc_401DAC\n0x4019dc: nop\n0x4019e0: lw      $a0, 0x5FDC+var_5FBC($fp)\n0x4019e4: lui     $v0, 0x40  # '@'\n0x4019e8: addiu   $a1, $v0, (aPath - 0x400000) # \"path\"\n0x4019ec: lui     $v0, 0x40  # '@'\n0x4019f0: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x4019f4: jal     sub_401138\n0x4019f8: nop\n0x4019fc: addiu   $v1, $fp, 0x5FDC+var_5FA0\n0x401a00: move    $a0, $v1\n0x401a04: move    $a1, $v0\n0x401a08: jal     strcpy\n0x401a0c: nop\n0x401a10: lw      $a0, 0x5FDC+var_5FBC($fp)\n0x401a14: lui     $v0, 0x40  # '@'\n0x401a18: addiu   $a1, $v0, (aPath - 0x400000) # \"path\"\n0x401a1c: lui     $v0, 0x40  # '@'\n0x401a20: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401a24: jal     sub_401138\n0x401a28: nop\n0x401a2c: addiu   $v1, $fp, 0x5FDC+var_5BA0\n0x401a30: move    $a0, $v1\n0x401a34: move    $a1, $v0\n0x401a38: jal     strcpy\n0x401a3c: nop\n0x401a40: addiu   $v1, $fp, 0x5FDC+var_5BA0\n0x401a44: addiu   $v0, $fp, 0x5FDC+var_57A0\n0x401a48: move    $a0, $v1\n0x401a4c: move    $a1, $v0\n0x401a50: jal     sub_401724\n0x401a54: nop\n0x401a58: lui     $v0, 0x40  # '@'\n0x401a5c: addiu   $s0, $v0, (aEchoAppidSVers - 0x400000) # \"echo appId:%s versionId:%s path:%s file\"...\n0x401a60: lw      $a0, 0x5FDC+var_5FBC($fp)\n0x401a64: lui     $v0, 0x40  # '@'\n0x401a68: addiu   $a1, $v0, (aPath - 0x400000) # \"path\"\n0x401a6c: lui     $v0, 0x40  # '@'\n0x401a70: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401a74: jal     sub_401138\n0x401a78: nop\n0x401a7c: move    $a1, $v0\n0x401a80: addiu   $a0, $fp, 0x5FDC+var_584\n0x401a84: addiu   $v1, $fp, 0x5FDC+var_184\n0x401a88: addiu   $v0, $fp, 0x5FDC+var_84\n0x401a8c: sw      $a1, 0x5FDC+var_5FCC($sp)\n0x401a90: addiu   $a1, $fp, 0x5FDC+var_57A0\n0x401a94: sw      $a1, 0x5FDC+var_5FC8($sp)\n0x401a98: move    $a1, $s0\n0x401a9c: move    $a2, $v1\n0x401aa0: move    $a3, $v0\n0x401aa4: jal     sprintf\n0x401aa8: nop\n0x401aac: addiu   $v0, $fp, 0x5FDC+var_584\n0x401ab0: move    $a0, $v0\n0x401ab4: jal     system\n0x401ab8: nop\n0x401abc: addiu   $v0, $fp, 0x5FDC+var_61C\n0x401ac0: move    $a0, $v0\n0x401ac4: move    $a1, $zero\n0x401ac8: li      $a2, 0x98\n0x401acc: jal     memset\n0x401ad0: nop\n0x401ad4: addiu   $v1, $fp, 0x5FDC+var_5FA0\n0x401ad8: li      $v0, aR # \"r\"\n0x401ae0: move    $a0, $v1\n0x401ae4: move    $a1, $v0\n0x401ae8: jal     fopen\n0x401aec: nop\n0x401af0: sw      $v0, 0x5FDC+var_5FA8($fp)\n0x401af4: lw      $v0, 0x5FDC+var_5FA8($fp)\n0x401af8: bnez    $v0, loc_401BA0\n0x401afc: nop\n0x401b00: lui     $v0, 0x40  # '@'\n0x401b04: addiu   $a0, $v0, (aHttp11200OkCon - 0x400000) # \"HTTP/1.1 200 OK\\nContent-type: text/htm\"...\n0x401b08: jal     puts\n0x401b0c: nop\n0x401b10: lui     $v0, 0x40  # '@'\n0x401b14: addiu   $s0, $v0, (aCanTFopenSS - 0x400000) # \"Can't fopen %s: %s\\n\"\n0x401b18: jal     __errno_location\n0x401b1c: nop\n0x401b20: lw      $v0, 0($v0)\n0x401b24: move    $a0, $v0\n0x401b28: jal     strerror\n0x401b2c: nop\n0x401b30: addiu   $a0, $fp, 0x5FDC+var_71C\n0x401b34: addiu   $v1, $fp, 0x5FDC+var_5FA0\n0x401b38: move    $a1, $s0\n0x401b3c: move    $a2, $v1\n0x401b40: move    $a3, $v0\n0x401b44: jal     sprintf\n0x401b48: nop\n0x401b4c: lui     $v0, 0x40  # '@'\n0x401b50: addiu   $v1, $v0, (aDownloadErrmsg - 0x400000) # \"download errmsg:%s \\n\"\n0x401b54: addiu   $v0, $fp, 0x5FDC+var_71C\n0x401b58: move    $a0, $v1\n0x401b5c: move    $a1, $v0\n0x401b60: jal     printf\n0x401b64: nop\n0x401b68: lui     $v0, 0x40  # '@'\n0x401b6c: addiu   $v1, $v0, (aEchoErrMsgSTmp - 0x400000) # \"echo err_msg:%s >>/tmp/download\"\n0x401b70: addiu   $a0, $fp, 0x5FDC+var_584\n0x401b74: addiu   $v0, $fp, 0x5FDC+var_71C\n0x401b78: move    $a1, $v1\n0x401b7c: move    $a2, $v0\n0x401b80: jal     sprintf\n0x401b84: nop\n0x401b88: addiu   $v0, $fp, 0x5FDC+var_584\n0x401b8c: move    $a0, $v0\n0x401b90: jal     system\n0x401b94: nop\n0x401b98: j       loc_401DAC\n0x401b9c: nop\n0x401ba0: addiu   $v1, $fp, 0x5FDC+var_5FA0\n0x401ba4: addiu   $v0, $fp, 0x5FDC+var_61C\n0x401ba8: move    $a0, $v1\n0x401bac: move    $a1, $v0\n0x401bb0: jal     stat\n0x401bb4: nop\n0x401bb8: lui     $v0, 0x40  # '@'\n0x401bbc: addiu   $v1, $v0, (aEchoContentLen - 0x400000) # \"echo Content-Length:%ld >>/tmp/download\"\n0x401bc0: lw      $v0, 0x5FDC+var_5E8($fp)\n0x401bc4: addiu   $a0, $fp, 0x5FDC+var_584\n0x401bc8: move    $a1, $v1\n0x401bcc: move    $a2, $v0\n0x401bd0: jal     sprintf\n0x401bd4: nop\n0x401bd8: addiu   $v0, $fp, 0x5FDC+var_584\n0x401bdc: move    $a0, $v0\n0x401be0: jal     system\n0x401be4: nop\n0x401be8: lui     $v0, 0x40  # '@'\n0x401bec: addiu   $a0, $v0, (aHttp11200Ok - 0x400000) # \"HTTP/1.1 200 OK\\r\"\n0x401bf0: jal     puts\n0x401bf4: nop\n0x401bf8: lui     $v0, 0x40  # '@'\n0x401bfc: addiu   $a0, $v0, (aContentTypeApp - 0x400000) # \"Content-Type: application/octet-stream\"...\n0x401c00: jal     puts\n0x401c04: nop\n0x401c08: lui     $v0, 0x41  # 'A'\n0x401c0c: lw      $a0, stdout\n0x401c10: lui     $v0, 0x40  # '@'\n0x401c14: addiu   $v1, $v0, (aContentLengthL - 0x400000) # \"Content-Length: %ld\\r\\n\"\n0x401c18: lw      $v0, 0x5FDC+var_5E8($fp)\n0x401c1c: move    $a1, $v1\n0x401c20: move    $a2, $v0\n0x401c24: jal     fprintf\n0x401c28: nop\n0x401c2c: lui     $v0, 0x41  # 'A'\n0x401c30: lw      $a0, stdout\n0x401c34: lui     $v0, 0x40  # '@'\n0x401c38: addiu   $v1, $v0, (aContentDisposi - 0x400000) # \"Content-Disposition: attachment; filena\"...\n0x401c3c: addiu   $v0, $fp, 0x5FDC+var_57A0\n0x401c40: move    $a1, $v1\n0x401c44: move    $a2, $v0\n0x401c48: jal     fprintf\n0x401c4c: nop\n0x401c50: lui     $v0, 0x40  # '@'\n0x401c54: addiu   $a0, $v0, (aCacheControlMa - 0x400000) # \"Cache-control: max-age=2592000\\r\"\n0x401c58: jal     puts\n0x401c5c: nop\n0x401c60: lui     $v0, 0x40  # '@'\n0x401c64: addiu   $a0, $v0, (aConnectionKeep - 0x400000) # \"Connection: keep-alive\\r\"\n0x401c68: jal     puts\n0x401c6c: nop\n0x401c70: lui     $v0, 0x40  # '@'\n0x401c74: addiu   $a0, $v0, (aKeepAliveTimeo - 0x400000) # \"keep-Alive: timeout=5, max=100\\r\\n\\r\"\n0x401c78: jal     puts\n0x401c7c: nop\n0x401c80: j       loc_401CF8\n0x401c84: nop\n0x401c88: addiu   $v1, $fp, 0x5FDC+var_5720\n0x401c8c: lw      $v0, stdout\n0x401c94: move    $a0, $v1\n0x401c98: lw      $a1, 0x5FDC+var_5FAC($fp)\n0x401c9c: move    $a2, $v0\n0x401ca0: jal     sub_401200\n0x401ca4: nop\n0x401ca8: lw      $v1, 0x5FDC+var_5FB0($fp)\n0x401cac: lw      $v0, 0x5FDC+var_5FAC($fp)\n0x401cb0: addu    $v0, $v1, $v0\n0x401cb4: sw      $v0, 0x5FDC+var_5FB0($fp)\n0x401cb8: li      $v0, aEchoCountLdTmp # \"echo count:%ld >>/tmp/download\"\n0x401cc0: addiu   $v1, $fp, 0x5FDC+var_584\n0x401cc4: move    $a0, $v1\n0x401cc8: move    $a1, $v0\n0x401ccc: lw      $a2, 0x5FDC+var_5FAC($fp)\n0x401cd0: jal     sprintf\n0x401cd4: nop\n0x401cd8: addiu   $v0, $fp, 0x5FDC+var_584\n0x401cdc: move    $a0, $v0\n0x401ce0: jal     system\n0x401ce4: nop\n0x401ce8: lui     $v0, 1\n0x401cec: ori     $a0, $v0, 0x86A0\n0x401cf0: jal     usleep\n0x401cf4: nop\n0x401cf8: addiu   $v0, $fp, 0x5FDC+var_5720\n0x401cfc: move    $a0, $v0\n0x401d00: li      $a1, 1\n0x401d04: li      $a2, 0x5000\n0x401d08: lw      $a3, 0x5FDC+var_5FA8($fp)\n0x401d0c: jal     fread\n0x401d10: nop\n0x401d14: sw      $v0, 0x5FDC+var_5FAC($fp)\n0x401d18: lw      $v0, 0x5FDC+var_5FAC($fp)\n0x401d1c: bgtz    $v0, loc_401C88\n0x401d20: nop\n0x401d24: li      $v0, aEchoCountsLdTm # \"echo counts:%ld >>/tmp/download\"\n0x401d2c: addiu   $v1, $fp, 0x5FDC+var_584\n0x401d30: move    $a0, $v1\n0x401d34: move    $a1, $v0\n0x401d38: lw      $a2, 0x5FDC+var_5FB0($fp)\n0x401d3c: jal     sprintf\n0x401d40: nop\n0x401d44: addiu   $v0, $fp, 0x5FDC+var_584\n0x401d48: move    $a0, $v0\n0x401d4c: jal     system\n0x401d50: nop\n0x401d54: sw      $zero, 0x5FDC+var_5FB8($fp)\n0x401d58: j       loc_401D78\n0x401d5c: nop\n0x401d60: li      $a0, 1\n0x401d64: jal     sleep\n0x401d68: nop\n0x401d6c: lw      $v0, 0x5FDC+var_5FB8($fp)\n0x401d70: addiu   $v0, 1\n0x401d74: sw      $v0, 0x5FDC+var_5FB8($fp)\n0x401d78: lw      $v0, 0x5FDC+var_5FB8($fp)\n0x401d7c: slti    $v0, 5\n0x401d80: bnez    $v0, loc_401D60\n0x401d84: nop\n0x401d88: lw      $a0, 0x5FDC+var_5FA8($fp)\n0x401d8c: jal     fclose\n0x401d90: nop\n0x401d94: lw      $a0, 0x5FDC+var_5FBC($fp)\n0x401d98: jal     cJSON_Delete\n0x401d9c: nop\n0x401da0: move    $v0, $zero\n0x401da4: j       loc_401DB0\n0x401da8: nop\n0x401dac: move    $v0, $zero\n0x401db0: move    $sp, $fp\n0x401db4: lw      $ra, 0x5FDC+var_s8($sp)\n0x401db8: lw      $fp, 0x5FDC+var_s4($sp)\n0x401dbc: lw      $s0, 0x5FDC+var_s0($sp)\n0x401dc0: addiu   $sp, 0x5FE8\n0x401dc4: jr      $ra\n0x401dc8: nop"]}, "strcpy": {"pseudo_code": ["// attributes: thunk\nint __fastcall strcpy(int a1, int a2)\n{\n  return off_41227C(a1, a2);\n}"], "assembly": ["0x400c00: lui     $t7, 0x41  # 'A'\n0x400c04: lw      $t9, off_41227C\n0x400c08: jr      $t9\n0x400c0c: addiu   $t8, $t7, (off_41227C - 0x410000)"]}, "sub_401724": {"pseudo_code": ["int __fastcall sub_401724(int a1, int a2)\n{\n  int v2; // $v0\n  int v4; // [sp+18h] [+18h]\n\n  v2 = strtok(a1, \"/\");\n  strcpy(a2, v2);\n  while ( 1 )\n  {\n    v4 = strtok(0, \"/\");\n    if ( !v4 )\n      break;\n    strcpy(a2, v4);\n  }\n  return 0;\n}"], "assembly": ["0x401724: addiu   $sp, -0x28\n0x401728: sw      $ra, 0x20+var_s4($sp)\n0x40172c: sw      $fp, 0x20+var_s0($sp)\n0x401730: move    $fp, $sp\n0x401734: sw      $a0, 0x20+arg_0($fp)\n0x401738: sw      $a1, 0x20+arg_4($fp)\n0x40173c: lw      $a0, 0x20+arg_0($fp)\n0x401740: lui     $v0, 0x40  # '@'\n0x401744: addiu   $a1, $v0, (asc_401F64 - 0x400000) # \"/\"\n0x401748: jal     strtok\n0x40174c: nop\n0x401750: lw      $a0, 0x20+arg_4($fp)\n0x401754: move    $a1, $v0\n0x401758: jal     strcpy\n0x40175c: nop\n0x401760: j       loc_401778\n0x401764: nop\n0x401768: lw      $a0, 0x20+arg_4($fp)\n0x40176c: lw      $a1, 0x20+var_8($fp)\n0x401770: jal     strcpy\n0x401774: nop\n0x401778: move    $a0, $zero\n0x40177c: lui     $v0, 0x40  # '@'\n0x401780: addiu   $a1, $v0, (asc_401F64 - 0x400000) # \"/\"\n0x401784: jal     strtok\n0x401788: nop\n0x40178c: sw      $v0, 0x20+var_8($fp)\n0x401790: lw      $v0, 0x20+var_8($fp)\n0x401794: bnez    $v0, loc_401768\n0x401798: nop\n0x40179c: move    $v0, $zero\n0x4017a0: move    $sp, $fp\n0x4017a4: lw      $ra, 0x20+var_s4($sp)\n0x4017a8: lw      $fp, 0x20+var_s0($sp)\n0x4017ac: addiu   $sp, 0x28\n0x4017b0: jr      $ra\n0x4017b4: nop"]}, "printf": {"pseudo_code": ["// attributes: thunk\nint printf(const char *a1, ...)\n{\n  return off_412284(a1);\n}"], "assembly": ["0x400c20: lui     $t7, 0x41  # 'A'\n0x400c24: lw      $t9, off_412284\n0x400c28: jr      $t9\n0x400c2c: addiu   $t8, $t7, (off_412284 - 0x410000)"]}, "sub_4012BC": {"pseudo_code": ["int __fastcall sub_4012BC(int a1, int a2, int a3)\n{\n  int v4; // $v0\n  int v5; // $v0\n  int v6; // $v0\n  int String; // $v0\n  int v8; // $v0\n  int v9; // $v0\n  int v10; // $v0\n  int v11; // $v0\n  int v12; // $v0\n  int v13; // $v0\n  int v14; // $v0\n  int v15; // $v0\n  int v16; // $v0\n  int v17; // $v0\n  int v18; // $v0\n  int v19; // $v0\n  int ArraySize; // [sp+18h] [+18h]\n  int ArrayItem; // [sp+1Ch] [+1Ch]\n  int v22; // [sp+20h] [+20h]\n  int i; // [sp+24h] [+24h]\n  int v24; // [sp+28h] [+28h]\n  int v25; // [sp+30h] [+30h]\n  int v26; // [sp+34h] [+34h]\n  _DWORD v27[38]; // [sp+38h] [+38h] BYREF\n  _BYTE v28[128]; // [sp+D0h] [+D0h] BYREF\n\n  memset(v28, 0, sizeof(v28));\n  memset(v27, 0, sizeof(v27));\n  if ( access(\"/var/acFwUpgrade.dat\", 4) )\n  {\n    sprintf(v28, \"echo [] > %s\", \"/var/acFwUpgrade.dat\");\n    sub_400FE0(v28, 0);\n  }\n  v26 = fopen(\"/var/acFwUpgrade.dat\", \"r\");\n  if ( v26 )\n  {\n    stat(\"/var/acFwUpgrade.dat\", v27);\n    v24 = v27[13] + 1;\n    v25 = malloc(v27[13] + 1);\n    memset(v25, 0, v24);\n    fread(v25, 1, v24, v26);\n    v22 = cJSON_Parse(v25);\n    fclose(v26);\n    ArraySize = cJSON_GetArraySize(v22);\n    for ( i = 0; i < cJSON_GetArraySize(v22); ++i )\n    {\n      ArrayItem = cJSON_GetArrayItem(v22, i);\n      v4 = sub_401138(ArrayItem, \"version\", &dword_401EE4);\n      if ( !strcmp(v4, a2) )\n      {\n        v5 = sub_401138(ArrayItem, \"appID\", &dword_401EE4);\n        if ( !strcmp(v5, a1) )\n        {\n          v6 = sub_401138(ArrayItem, \"ID\", &dword_401EE4);\n          String = cJSON_CreateString(v6);\n          cJSON_AddItemToObject(a3, \"ID\", String);\n          v8 = sub_401138(ArrayItem, \"appID\", &dword_401EE4);\n          v9 = cJSON_CreateString(v8);\n          cJSON_AddItemToObject(a3, \"appID\", v9);\n          v10 = sub_401138(ArrayItem, \"version\", &dword_401EE4);\n          v11 = cJSON_CreateString(v10);\n          cJSON_AddItemToObject(a3, \"version\", v11);\n          v12 = sub_401138(ArrayItem, \"uptime\", &dword_401EE4);\n          v13 = cJSON_CreateString(v12);\n          cJSON_AddItemToObject(a3, \"uptime\", v13);\n          v14 = sub_401138(ArrayItem, \"enable\", &dword_401EE4);\n          v15 = cJSON_CreateString(v14);\n          cJSON_AddItemToObject(a3, \"enable\", v15);\n          v16 = sub_401138(ArrayItem, \"path\", &dword_401EE4);\n          v17 = cJSON_CreateString(v16);\n          cJSON_AddItemToObject(a3, \"path\", v17);\n          v18 = sub_401138(ArrayItem, \"svnNum\", &dword_401EE4);\n          v19 = cJSON_CreateString(v18);\n          cJSON_AddItemToObject(a3, \"svnNum\", v19);\n          break;\n        }\n      }\n    }\n    free(v25);\n    cJSON_Delete(v22);\n    if ( i < ArraySize )\n      return i;\n    else\n      return -1;\n  }\n  else\n  {\n    puts(\"addManageInfo fopen failed\");\n    return -1;\n  }\n}"], "assembly": ["0x4012bc: addiu   $sp, -0x158\n0x4012c0: sw      $ra, 0x150+var_s4($sp)\n0x4012c4: sw      $fp, 0x150+var_s0($sp)\n0x4012c8: move    $fp, $sp\n0x4012cc: sw      $a0, 0x150+arg_0($fp)\n0x4012d0: sw      $a1, 0x150+arg_4($fp)\n0x4012d4: sw      $a2, 0x150+arg_8($fp)\n0x4012d8: sw      $zero, 0x150+var_12C($fp)\n0x4012dc: addiu   $v1, $fp, 0x150+var_80\n0x4012e0: li      $v0, 0x80\n0x4012e4: move    $a0, $v1\n0x4012e8: move    $a1, $zero\n0x4012ec: move    $a2, $v0\n0x4012f0: jal     memset\n0x4012f4: nop\n0x4012f8: sw      $zero, 0x150+var_138($fp)\n0x4012fc: addiu   $v0, $fp, 0x150+var_118\n0x401300: move    $a0, $v0\n0x401304: move    $a1, $zero\n0x401308: li      $a2, 0x98\n0x40130c: jal     memset\n0x401310: nop\n0x401314: lui     $v0, 0x40  # '@'\n0x401318: addiu   $a0, $v0, (aVarAcfwupgrade - 0x400000) # \"/var/acFwUpgrade.dat\"\n0x40131c: li      $a1, 4\n0x401320: jal     access\n0x401324: nop\n0x401328: beqz    $v0, loc_401368\n0x40132c: nop\n0x401330: li      $v0, aEchoS # \"echo [] > %s\"\n0x401338: addiu   $v1, $fp, 0x150+var_80\n0x40133c: move    $a0, $v1\n0x401340: move    $a1, $v0\n0x401344: lui     $v0, 0x40  # '@'\n0x401348: addiu   $a2, $v0, (aVarAcfwupgrade - 0x400000) # \"/var/acFwUpgrade.dat\"\n0x40134c: jal     sprintf\n0x401350: nop\n0x401354: addiu   $v0, $fp, 0x150+var_80\n0x401358: move    $a0, $v0\n0x40135c: move    $a1, $zero\n0x401360: jal     sub_400FE0\n0x401364: nop\n0x401368: lui     $v0, 0x40  # '@'\n0x40136c: addiu   $v1, $v0, (aVarAcfwupgrade - 0x400000) # \"/var/acFwUpgrade.dat\"\n0x401370: li      $v0, aR # \"r\"\n0x401378: move    $a0, $v1\n0x40137c: move    $a1, $v0\n0x401380: jal     fopen\n0x401384: nop\n0x401388: sw      $v0, 0x150+var_11C($fp)\n0x40138c: lw      $v0, 0x150+var_11C($fp)\n0x401390: bnez    $v0, loc_4013B8\n0x401394: nop\n0x401398: lui     $v0, 0x40  # '@'\n0x40139c: addiu   $a0, $v0, (aAddmanageinfoF - 0x400000) # \"addManageInfo fopen failed\"\n0x4013a0: jal     puts\n0x4013a4: nop\n0x4013a8: nop\n0x4013ac: li      $v0, 0xFFFFFFFF\n0x4013b0: j       loc_40170C\n0x4013b4: nop\n0x4013b8: lui     $v0, 0x40  # '@'\n0x4013bc: addiu   $v1, $v0, (aVarAcfwupgrade - 0x400000) # \"/var/acFwUpgrade.dat\"\n0x4013c0: addiu   $v0, $fp, 0x150+var_118\n0x4013c4: move    $a0, $v1\n0x4013c8: move    $a1, $v0\n0x4013cc: jal     stat\n0x4013d0: nop\n0x4013d4: lw      $v0, 0x150+var_E4($fp)\n0x4013d8: addiu   $v0, 1\n0x4013dc: sw      $v0, 0x150+var_128($fp)\n0x4013e0: lw      $v0, 0x150+var_128($fp)\n0x4013e4: move    $a0, $v0\n0x4013e8: jal     malloc\n0x4013ec: nop\n0x4013f0: sw      $v0, 0x150+var_120($fp)\n0x4013f4: lw      $v0, 0x150+var_128($fp)\n0x4013f8: lw      $a0, 0x150+var_120($fp)\n0x4013fc: move    $a1, $zero\n0x401400: move    $a2, $v0\n0x401404: jal     memset\n0x401408: nop\n0x40140c: lw      $v0, 0x150+var_128($fp)\n0x401410: lw      $a0, 0x150+var_120($fp)\n0x401414: li      $a1, 1\n0x401418: move    $a2, $v0\n0x40141c: lw      $a3, 0x150+var_11C($fp)\n0x401420: jal     fread\n0x401424: nop\n0x401428: lw      $a0, 0x150+var_120($fp)\n0x40142c: jal     cJSON_Parse\n0x401430: nop\n0x401434: sw      $v0, 0x150+var_130($fp)\n0x401438: lw      $a0, 0x150+var_11C($fp)\n0x40143c: jal     fclose\n0x401440: nop\n0x401444: lw      $a0, 0x150+var_130($fp)\n0x401448: jal     cJSON_GetArraySize\n0x40144c: nop\n0x401450: sw      $v0, 0x150+var_138($fp)\n0x401454: sw      $zero, 0x150+var_12C($fp)\n0x401458: j       loc_4016B0\n0x40145c: nop\n0x401460: lw      $a0, 0x150+var_130($fp)\n0x401464: lw      $a1, 0x150+var_12C($fp)\n0x401468: jal     cJSON_GetArrayItem\n0x40146c: nop\n0x401470: sw      $v0, 0x150+var_134($fp)\n0x401474: lw      $a0, 0x150+var_134($fp)\n0x401478: lui     $v0, 0x40  # '@'\n0x40147c: addiu   $a1, $v0, (aVersion - 0x400000) # \"version\"\n0x401480: lui     $v0, 0x40  # '@'\n0x401484: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401488: jal     sub_401138\n0x40148c: nop\n0x401490: move    $a0, $v0\n0x401494: lw      $a1, 0x150+arg_4($fp)\n0x401498: jal     strcmp\n0x40149c: nop\n0x4014a0: bnez    $v0, loc_4016A4\n0x4014a4: nop\n0x4014a8: lw      $a0, 0x150+var_134($fp)\n0x4014ac: lui     $v0, 0x40  # '@'\n0x4014b0: addiu   $a1, $v0, (aAppid - 0x400000) # \"appID\"\n0x4014b4: lui     $v0, 0x40  # '@'\n0x4014b8: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x4014bc: jal     sub_401138\n0x4014c0: nop\n0x4014c4: move    $a0, $v0\n0x4014c8: lw      $a1, 0x150+arg_0($fp)\n0x4014cc: jal     strcmp\n0x4014d0: nop\n0x4014d4: bnez    $v0, loc_4016A4\n0x4014d8: nop\n0x4014dc: lw      $a0, 0x150+var_134($fp)\n0x4014e0: lui     $v0, 0x40  # '@'\n0x4014e4: addiu   $a1, $v0, (aId - 0x400000) # \"ID\"\n0x4014e8: lui     $v0, 0x40  # '@'\n0x4014ec: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x4014f0: jal     sub_401138\n0x4014f4: nop\n0x4014f8: move    $a0, $v0\n0x4014fc: jal     cJSON_CreateString\n0x401500: nop\n0x401504: lw      $a0, 0x150+arg_8($fp)\n0x401508: lui     $v1, 0x40  # '@'\n0x40150c: addiu   $a1, $v1, (aId - 0x400000) # \"ID\"\n0x401510: move    $a2, $v0\n0x401514: jal     cJSON_AddItemToObject\n0x401518: nop\n0x40151c: lw      $a0, 0x150+var_134($fp)\n0x401520: lui     $v0, 0x40  # '@'\n0x401524: addiu   $a1, $v0, (aAppid - 0x400000) # \"appID\"\n0x401528: lui     $v0, 0x40  # '@'\n0x40152c: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401530: jal     sub_401138\n0x401534: nop\n0x401538: move    $a0, $v0\n0x40153c: jal     cJSON_CreateString\n0x401540: nop\n0x401544: lw      $a0, 0x150+arg_8($fp)\n0x401548: lui     $v1, 0x40  # '@'\n0x40154c: addiu   $a1, $v1, (aAppid - 0x400000) # \"appID\"\n0x401550: move    $a2, $v0\n0x401554: jal     cJSON_AddItemToObject\n0x401558: nop\n0x40155c: lw      $a0, 0x150+var_134($fp)\n0x401560: lui     $v0, 0x40  # '@'\n0x401564: addiu   $a1, $v0, (aVersion - 0x400000) # \"version\"\n0x401568: lui     $v0, 0x40  # '@'\n0x40156c: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401570: jal     sub_401138\n0x401574: nop\n0x401578: move    $a0, $v0\n0x40157c: jal     cJSON_CreateString\n0x401580: nop\n0x401584: lw      $a0, 0x150+arg_8($fp)\n0x401588: lui     $v1, 0x40  # '@'\n0x40158c: addiu   $a1, $v1, (aVersion - 0x400000) # \"version\"\n0x401590: move    $a2, $v0\n0x401594: jal     cJSON_AddItemToObject\n0x401598: nop\n0x40159c: lw      $a0, 0x150+var_134($fp)\n0x4015a0: lui     $v0, 0x40  # '@'\n0x4015a4: addiu   $a1, $v0, (aUptime - 0x400000) # \"uptime\"\n0x4015a8: lui     $v0, 0x40  # '@'\n0x4015ac: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x4015b0: jal     sub_401138\n0x4015b4: nop\n0x4015b8: move    $a0, $v0\n0x4015bc: jal     cJSON_CreateString\n0x4015c0: nop\n0x4015c4: lw      $a0, 0x150+arg_8($fp)\n0x4015c8: lui     $v1, 0x40  # '@'\n0x4015cc: addiu   $a1, $v1, (aUptime - 0x400000) # \"uptime\"\n0x4015d0: move    $a2, $v0\n0x4015d4: jal     cJSON_AddItemToObject\n0x4015d8: nop\n0x4015dc: lw      $a0, 0x150+var_134($fp)\n0x4015e0: lui     $v0, 0x40  # '@'\n0x4015e4: addiu   $a1, $v0, (aEnable - 0x400000) # \"enable\"\n0x4015e8: lui     $v0, 0x40  # '@'\n0x4015ec: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x4015f0: jal     sub_401138\n0x4015f4: nop\n0x4015f8: move    $a0, $v0\n0x4015fc: jal     cJSON_CreateString\n0x401600: nop\n0x401604: lw      $a0, 0x150+arg_8($fp)\n0x401608: lui     $v1, 0x40  # '@'\n0x40160c: addiu   $a1, $v1, (aEnable - 0x400000) # \"enable\"\n0x401610: move    $a2, $v0\n0x401614: jal     cJSON_AddItemToObject\n0x401618: nop\n0x40161c: lw      $a0, 0x150+var_134($fp)\n0x401620: lui     $v0, 0x40  # '@'\n0x401624: addiu   $a1, $v0, (aPath - 0x400000) # \"path\"\n0x401628: lui     $v0, 0x40  # '@'\n0x40162c: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401630: jal     sub_401138\n0x401634: nop\n0x401638: move    $a0, $v0\n0x40163c: jal     cJSON_CreateString\n0x401640: nop\n0x401644: lw      $a0, 0x150+arg_8($fp)\n0x401648: lui     $v1, 0x40  # '@'\n0x40164c: addiu   $a1, $v1, (aPath - 0x400000) # \"path\"\n0x401650: move    $a2, $v0\n0x401654: jal     cJSON_AddItemToObject\n0x401658: nop\n0x40165c: lw      $a0, 0x150+var_134($fp)\n0x401660: lui     $v0, 0x40  # '@'\n0x401664: addiu   $a1, $v0, (aSvnnum - 0x400000) # \"svnNum\"\n0x401668: lui     $v0, 0x40  # '@'\n0x40166c: addiu   $a2, $v0, (dword_401EE4 - 0x400000)\n0x401670: jal     sub_401138\n0x401674: nop\n0x401678: move    $a0, $v0\n0x40167c: jal     cJSON_CreateString\n0x401680: nop\n0x401684: lw      $a0, 0x150+arg_8($fp)\n0x401688: lui     $v1, 0x40  # '@'\n0x40168c: addiu   $a1, $v1, (aSvnnum - 0x400000) # \"svnNum\"\n0x401690: move    $a2, $v0\n0x401694: jal     cJSON_AddItemToObject\n0x401698: nop\n0x40169c: j       loc_4016D0\n0x4016a0: nop\n0x4016a4: lw      $v0, 0x150+var_12C($fp)\n0x4016a8: addiu   $v0, 1\n0x4016ac: sw      $v0, 0x150+var_12C($fp)\n0x4016b0: lw      $a0, 0x150+var_130($fp)\n0x4016b4: jal     cJSON_GetArraySize\n0x4016b8: nop\n0x4016bc: move    $v1, $v0\n0x4016c0: lw      $v0, 0x150+var_12C($fp)\n0x4016c4: slt     $v0, $v1\n0x4016c8: bnez    $v0, loc_401460\n0x4016cc: nop\n0x4016d0: lw      $a0, 0x150+var_120($fp)\n0x4016d4: jal     free\n0x4016d8: nop\n0x4016dc: lw      $a0, 0x150+var_130($fp)\n0x4016e0: jal     cJSON_Delete\n0x4016e4: nop\n0x4016e8: lw      $v1, 0x150+var_12C($fp)\n0x4016ec: lw      $v0, 0x150+var_138($fp)\n0x4016f0: slt     $v0, $v1, $v0\n0x4016f4: bnez    $v0, loc_401708\n0x4016f8: nop\n0x4016fc: li      $v0, 0xFFFFFFFF\n0x401700: j       loc_40170C\n0x401704: nop\n0x401708: lw      $v0, 0x150+var_12C($fp)\n0x40170c: move    $sp, $fp\n0x401710: lw      $ra, 0x150+var_s4($sp)\n0x401714: lw      $fp, 0x150+var_s0($sp)\n0x401718: addiu   $sp, 0x158\n0x40171c: jr      $ra\n0x401720: nop"]}, "sub_400FE0": {"pseudo_code": ["int __fastcall sub_400FE0(const char *a1, int a2)\n{\n  int v3; // [sp+18h] [+18h]\n  int v4; // [sp+1Ch] [+1Ch] BYREF\n  _DWORD v5[4]; // [sp+20h] [+20h] BYREF\n\n  v4 = 0;\n  if ( a1 )\n  {\n    v3 = fork();\n    if ( v3 == -1 )\n    {\n      return -1;\n    }\n    else\n    {\n      if ( !v3 )\n      {\n        v5[0] = \"sh\";\n        v5[1] = \"-c\";\n        v5[2] = a1;\n        v5[3] = 0;\n        if ( a2 )\n          printf(\"[system]: %s\\r\\n\", a1);\n        execv(\"/bin/sh\", v5);\n        exit(127);\n      }\n      while ( waitpid(v3, &v4, 0) == -1 )\n      {\n        if ( *(_DWORD *)_errno_location() != 4 )\n          return -1;\n      }\n      return v4;\n    }\n  }\n  else\n  {\n    printf(\"CsteSystem: Null Command, Error!\");\n    return -1;\n  }\n}"], "assembly": ["0x400fe0: addiu   $sp, -0x38\n0x400fe4: sw      $ra, 0x30+var_s4($sp)\n0x400fe8: sw      $fp, 0x30+var_s0($sp)\n0x400fec: move    $fp, $sp\n0x400ff0: sw      $a0, 0x30+arg_0($fp)\n0x400ff4: sw      $a1, 0x30+arg_4($fp)\n0x400ff8: sw      $zero, 0x30+var_18($fp)\n0x400ffc: sw      $zero, 0x30+var_14($fp)\n0x401000: lw      $v0, 0x30+arg_0($fp)\n0x401004: bnez    $v0, loc_40102C\n0x401008: nop\n0x40100c: li      $v0, aCstesystemNull # \"CsteSystem: Null Command, Error!\"\n0x401014: move    $a0, $v0\n0x401018: jal     printf\n0x40101c: nop\n0x401020: li      $v0, 0xFFFFFFFF\n0x401024: j       loc_401120\n0x401028: nop\n0x40102c: jal     fork\n0x401030: nop\n0x401034: sw      $v0, 0x30+var_18($fp)\n0x401038: lw      $v1, 0x30+var_18($fp)\n0x40103c: li      $v0, 0xFFFFFFFF\n0x401040: bne     $v1, $v0, loc_401054\n0x401044: nop\n0x401048: li      $v0, 0xFFFFFFFF\n0x40104c: j       loc_401120\n0x401050: nop\n0x401054: lw      $v0, 0x30+var_18($fp)\n0x401058: bnez    $v0, loc_4010D0\n0x40105c: nop\n0x401060: li      $v0, aSh # \"sh\"\n0x401068: sw      $v0, 0x30+var_10($fp)\n0x40106c: li      $v0, aC # \"-c\"\n0x401074: sw      $v0, 0x30+var_C($fp)\n0x401078: lw      $v0, 0x30+arg_0($fp)\n0x40107c: sw      $v0, 0x30+var_8($fp)\n0x401080: sw      $zero, 0x30+var_4($fp)\n0x401084: lw      $v0, 0x30+arg_4($fp)\n0x401088: beqz    $v0, loc_4010A8\n0x40108c: nop\n0x401090: li      $v0, aSystemS # \"[system]: %s\\r\\n\"\n0x401098: move    $a0, $v0\n0x40109c: lw      $a1, 0x30+arg_0($fp)\n0x4010a0: jal     printf\n0x4010a4: nop\n0x4010a8: addiu   $v0, $fp, 0x30+var_10\n0x4010ac: lui     $v1, 0x40  # '@'\n0x4010b0: addiu   $a0, $v1, (aBinSh - 0x400000) # \"/bin/sh\"\n0x4010b4: move    $a1, $v0\n0x4010b8: jal     execv\n0x4010bc: nop\n0x4010c0: li      $a0, 0x7F\n0x4010c4: jal     exit\n0x4010c8: nop\n0x4010cc: nop\n0x4010d0: addiu   $v0, $fp, 0x30+var_14\n0x4010d4: lw      $a0, 0x30+var_18($fp)\n0x4010d8: move    $a1, $v0\n0x4010dc: move    $a2, $zero\n0x4010e0: jal     waitpid\n0x4010e4: nop\n0x4010e8: move    $v1, $v0\n0x4010ec: li      $v0, 0xFFFFFFFF\n0x4010f0: bne     $v1, $v0, loc_40111C\n0x4010f4: nop\n0x4010f8: jal     __errno_location\n0x4010fc: nop\n0x401100: lw      $v1, 0($v0)\n0x401104: li      $v0, 4\n0x401108: beq     $v1, $v0, loc_4010CC\n0x40110c: nop\n0x401110: li      $v0, 0xFFFFFFFF\n0x401114: j       loc_401120\n0x401118: nop\n0x40111c: lw      $v0, 0x30+var_14($fp)\n0x401120: move    $sp, $fp\n0x401124: lw      $ra, 0x30+var_s4($sp)\n0x401128: lw      $fp, 0x30+var_s0($sp)\n0x40112c: addiu   $sp, 0x38\n0x401130: jr      $ra\n0x401134: nop"]}, "system": {"pseudo_code": ["// attributes: thunk\nint __fastcall system(int a1)\n{\n  return off_4122A4(a1);\n}"], "assembly": ["0x400ca0: lui     $t7, 0x41  # 'A'\n0x400ca4: lw      $t9, off_4122A4\n0x400ca8: jr      $t9\n0x400cac: addiu   $t8, $t7, (off_4122A4 - 0x410000)"]}, "strtok": {"pseudo_code": ["// attributes: thunk\nint __fastcall strtok(int a1, int a2)\n{\n  return off_4122C8(a1, a2);\n}"], "assembly": ["0x400d30: lui     $t7, 0x41  # 'A'\n0x400d34: lw      $t9, off_4122C8\n0x400d38: jr      $t9\n0x400d3c: addiu   $t8, $t7, (off_4122C8 - 0x410000)"]}, "sprintf": {"pseudo_code": ["// attributes: thunk\nint sprintf(int a1, const char *a2, ...)\n{\n  return off_4122EC(a1, a2);\n}"], "assembly": ["0x400dc0: lui     $t7, 0x41  # 'A'\n0x400dc4: lw      $t9, off_4122EC\n0x400dc8: jr      $t9\n0x400dcc: addiu   $t8, $t7, (off_4122EC - 0x410000)"]}, "access": {"pseudo_code": ["// attributes: thunk\nint __fastcall access(int a1, int a2)\n{\n  return off_4122FC(a1, a2);\n}"], "assembly": ["0x400e00: lui     $t7, 0x41  # 'A'\n0x400e04: lw      $t9, off_4122FC\n0x400e08: jr      $t9\n0x400e0c: addiu   $t8, $t7, (off_4122FC - 0x410000)"]}};
+    
+    // 分页功能实现
+    let currentFilteredVulnItems = [];
+    let currentPage = 0;
+    const itemsPerPage = 3;
+
+    function updatePagination() {
+        const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage) || 1;
+        
+        // 调整当前页数
+        currentPage = Math.max(0, Math.min(currentPage, totalPages - 1));
+        
+        // 强制隐藏所有条目
+        document.querySelectorAll('.vuln-item').forEach(el => el.style.display = 'none');
+
+        // 仅显示当前页条目
+        currentFilteredVulnItems.slice(
+            currentPage * itemsPerPage,
+            (currentPage + 1) * itemsPerPage
+        ).forEach(({element}) => {
+            element.style.display = 'block';
+            const content = element.querySelector('[id$="-content"]');
+            if (content) {
+                
+                element.querySelector('[id$="-arrow"]').style.transform = 'rotate(180deg)';
+            }
+        });
+        
+        // 更新按钮状态
+        document.getElementById('prevPage').disabled = currentPage === 0;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages - 1;
+        document.getElementById('pageInfo').textContent = currentFilteredVulnItems.length === 0 
+            ? '无结果' 
+            : `第${currentPage + 1}页/共${totalPages}页`;
+        
+        // 隐藏所有条目并显示当前页
+        document.querySelectorAll('.vuln-item').forEach(el => el.style.display = 'none');
+        currentFilteredVulnItems.slice(
+            currentPage * itemsPerPage,
+            (currentPage + 1) * itemsPerPage
+        ).forEach(({element}) => {
+            element.style.display = 'block';
+            // 自动展开当前页条目
+            const content = element.querySelector('[id$="-content"]');
+            if (content && content.classList.contains('hidden')) {
+                
+                element.querySelector('[id$="-arrow"]').style.transform = 'rotate(180deg)';
+            }
+        });
+
+        // 滚动到顶部
+        if (currentFilteredVulnItems.length > 0) {
+            const firstVisible = currentFilteredVulnItems[currentPage * itemsPerPage]?.element;
+            firstVisible?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+    }
+
+    // 初始化搜索和分页
+    function initSearch() {
+        const vulnItems = Array.from(document.querySelectorAll('.vuln-item'));
+        currentFilteredVulnItems = vulnItems.map(element => ({
+            element,
+            text: element.innerText.toLowerCase()
+        }));
+        
+        // 搜索功能
+        document.getElementById('vulnSearch').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase().trim();
+            currentFilteredVulnItems = vulnItems
+                .map(element => ({
+                    element,
+                    text: element.innerText.toLowerCase()
+                }))
+                .filter(({text}) => text.includes(term));
+            currentPage = 0;
+            updatePagination();
+        });
+    }
+    // 折叠面板切换
+    function toggleSection(id) {
+        const content = document.getElementById(`${id}-content`);
+        const arrow = document.getElementById(`${id}-arrow`);
+        const allContents = document.querySelectorAll('[id$="-content"]');
+        const allArrows = document.querySelectorAll('[id$="-arrow"]');
+        
+        allContents.forEach(el => el !== content && el.classList.add('hidden'));
+        allArrows.forEach(el => el !== arrow && (el.style.transform = ''));
+        
+        content.classList.toggle('hidden');
+        arrow.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        !content.classList.contains('hidden') && content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initSearch();
+        // 新增初始化分页
+        currentFilteredVulnItems = Array.from(document.querySelectorAll('.vuln-item'))
+            .map(element => ({
+                element,
+                text: element.innerText.toLowerCase()
+            }));
+        updatePagination();  // 关键初始化调用
+
+        // 分页按钮事件绑定
+        document.getElementById('prevPage').addEventListener('click', () => {
+            currentPage = Math.max(0, currentPage - 1);
+            updatePagination();
+        });
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage);
+            currentPage = Math.min(totalPages - 1, currentPage + 1);
+            updatePagination();
+        });
+        document.getElementById('prevPage').addEventListener('click', () => {
+                    currentPage = Math.max(0, currentPage - 1);
+                    updatePagination();
+                });
+        document.getElementById('nextPage').addEventListener('click', () => {
+                    const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage);
+                    currentPage = Math.min(totalPages - 1, currentPage + 1);
+                    updatePagination();
+                });
+        // 函数点击交互
+        document.querySelectorAll('.function-name').forEach(func => {
+            func.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const [functionName, address] = func.dataset.function.split('@');
+                const codeData = globalCodeDict[functionName];
+                
+                if (codeData) {
+                    // 同时更新左右两列
+                    document.getElementById('pseudo-code').innerHTML = `
+                        <div class="text-secondary mb-2">📜 伪代码</div>
+                        <pre class="text-white/80">${codeData.pseudo_code.join('\n')}</pre>
+                    `;
+                    document.getElementById('assembly-code').innerHTML = `
+                        <div class="text-secondary mb-2">📜 汇编代码</div>
+                        <pre class="text-white/80">${codeData.assembly.join('\n')}</pre>
+                    `;
+                    
+                    // 更新状态信息
+                    document.getElementById('current-function').textContent = functionName;
+                    document.getElementById('code-location').innerHTML = `
+                        <i class="ri-map-pin-line"></i>
+                        <span>链路上下一调用点地址: ${address}</span>
+                    `;
+                    document.getElementById('code-status').innerHTML = `
+                        <i class="ri-terminal-box-line"></i>
+                        <span>已加载: ${functionName}</span>
+                    `;
+                    
+                    // 显示代码卡片
+                    document.getElementById('code-card').style.display = 'block';
+                }
+            });
+        });
+
+        // 代码卡片交互
+        let isDragging = false, isResizing = false;
+        let startX, startY, startWidth, startHeight, startLeft, startTop;
+        const card = document.getElementById('code-card');
+        const contentBox = card.querySelector('.glass-card');
+        const resizeHandle = card.querySelector('.resize-handle');
+
+        // 拖动处理
+        contentBox.addEventListener('mousedown', (e) => {
+            if(e.target !== resizeHandle) {
+                isDragging = true;
+                [startX, startY] = [e.clientX, e.clientY];
+                [startLeft, startTop] = [parseFloat(contentBox.style.left), parseFloat(contentBox.style.top)];
+            }
+        });
+
+        // 调整大小处理
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            [startX, startY] = [e.clientX, e.clientY];
+            [startWidth, startHeight] = [contentBox.offsetWidth, contentBox.offsetHeight];
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if(isDragging) {
+                contentBox.style.left = `${startLeft + e.clientX - startX}px`;
+                contentBox.style.top = `${startTop + e.clientY - startY}px`;
+                contentBox.style.transform = 'none';
+            }
+            if(isResizing) {
+                contentBox.style.width = `${Math.max(400, startWidth + e.clientX - startX)}px`;
+                contentBox.style.height = `${Math.max(300, startHeight + e.clientY - startY)}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = isResizing = false;
+        });
+
+        // 关闭按钮
+        document.getElementById('close-btn').addEventListener('click', () => {
+            card.style.display = 'none';
+        });
+
+        // 粒子效果初始化
+        Array.from({length: 50}).forEach(() => {
+            const particle = document.createElement('div');
+            Object.assign(particle.style, {
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `sparkle ${2 + Math.random() * 3}s infinite`
+            });
+            particle.className = 'particle';
+            document.body.appendChild(particle);
+        });
+
+        // 初始化状态栏
+        function updateCodeStatus() {
+            const pseudoLines = document.getElementById('pseudo-code').querySelector('pre').textContent.split('\n').length;
+            const assemblyLines = document.getElementById('assembly-code').querySelector('pre').textContent.split('\n').length;
+            const totalSize = new Blob([
+                document.getElementById('pseudo-code').textContent,
+                document.getElementById('assembly-code').textContent
+            ]).size / 1024;
+            
+            document.getElementById('code-lines').innerHTML = `
+                <i class="ri-numbers-line"></i>
+                <span>行数: 伪码${pseudoLines} / 汇编${assemblyLines}</span>
+            `;
+            document.getElementById('code-size').innerHTML = `
+                <i class="ri-database-2-line"></i>
+                <span>大小: ${totalSize.toFixed(2)} KB</span>
+            `;
+        }
+        updateCodeStatus();
+    });
+
+    
+    </script>
+    
+</body>
+</html>
+    
+        </div>
+      </section>
+      <section class="mb-16">
+        <div class="magic-card p-8 rounded-lg">
+          <h2 class="text-2xl font-bold mb-6 gradient-text">技术内幕</h2>
+          <div class="flex flex-col space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="p-6 bg-[rgba(5,217,232,0.1)] rounded-lg">
+                <h4 class="font-semibold mb-4 text-secondary text-xl">
+                  危险函数扫描
+                </h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  通过预设的危险函数库，快速定位代码中的潜在威胁点，建立初步的漏洞地图。
+                </p>
+              </div>
+              <div class="p-6 bg-[rgba(5,217,232,0.1)] rounded-lg">
+                <h4 class="font-semibold mb-4 text-secondary text-xl">
+                  调用链溯源
+                </h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  基于代码静态分析，构建完整的函数调用关系图，追踪数据流向。
+                </p>
+              </div>
+              <div class="p-6 bg-[rgba(5,217,232,0.1)] rounded-lg">
+                <h4 class="font-semibold mb-4 text-secondary text-xl">
+                  逆向回溯
+                </h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  从漏洞点逆向分析数据来源，识别输入验证缺陷。
+                </p>
+              </div>
+              <div class="p-6 bg-[rgba(5,217,232,0.1)] rounded-lg">
+                <h4 class="font-semibold mb-4 text-secondary text-xl">
+                  汇编级验证
+                </h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  深入底层汇编代码，验证漏洞的真实性和利用条件。
+                </p>
+              </div>
+            </div>
+            <div class="flex justify-center">
+              <div class="relative w-full max-w-4xl">
+                <div
+                  class="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg filter blur-xl"
+                ></div>
+                <img
+                  src="https://static.readdy.ai/image/36bae62eef93ac04fceed74ddd0fd196/ef834c09dfea5c0787c0b09faf53eb0a.png"
+                  alt="技术流程图"
+                  class="relative w-full rounded-lg border-2 border-[rgba(5,217,232,0.3)] shadow-[0_0_20px_rgba(5,217,232,0.2)]"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="p-6 bg-[rgba(5,217,232,0.1)] rounded-lg">
+                <h4 class="font-semibold mb-4 text-secondary text-xl">
+                  LLM智能分析
+                </h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  利用大语言模型分析代码语义，提供智能化的漏洞评估和修复建议。
+                </p>
+              </div>
+              <div class="p-6 bg-[rgba(5,217,232,0.1)] rounded-lg">
+                <h4 class="font-semibold mb-4 text-secondary text-xl">
+                  CVSS 3.1评分
+                </h4>
+                <p class="text-gray-400" style="color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 20px rgba(5, 217, 232, 1), 0 0 40px rgba(250, 211, 247, 1), 0 0 60px rgb(210, 52, 196);  font-size: 1.5em;">
+                  根据漏洞影响范围和利用难度，给出标准化的威胁等级评分。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer
+      class="bg-[rgba(10,10,20,0.95)] py-8 border-t border-[rgba(5,217,232,0.2)]"
+    >
+      <div class="container mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="text-gray-400 mb-4 md:mb-0">
+            © 2025 HRP Auto Analyze. All rights reserved.
+          </div>
+          <div class="flex space-x-6">
+            <a href="#" class="text-gray-400 hover:text-primary">
+              <i class="ri-github-line text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-primary">
+              <i class="ri-twitter-line text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-primary">
+              <i class="ri-discord-line text-xl"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
