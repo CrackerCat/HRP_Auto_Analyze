@@ -138,7 +138,9 @@ C:\Python312\python.exe  -m pip install openai tenacity
 
 ![](image/2.jpg)
 
-![](image/3.jpg)![](image/4.jpg)  
+![](image/3.jpg)
+
+![](image/4.jpg)  
 
 
 ---
