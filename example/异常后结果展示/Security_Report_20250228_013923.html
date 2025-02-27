@@ -1,0 +1,552 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>🪄二进制安全分析报告🪄 ——Power by HRP@Nepnep</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary:"#8B5CF6", secondary:"#C4B5FD" },
+                    borderRadius: { DEFAULT:"8px", md:"12px", lg:"16px", full:"9999px" }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+    
+    <style>
+    @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+    @keyframes sparkle { 0%,100% { opacity:0 } 50% { opacity:1 } }
+    @keyframes scanline { 0% { transform:translateY(-100%) } 100% { transform:translateY(100%) } }
+    #pseudo-code::-webkit-scrollbar,
+    #assembly-code::-webkit-scrollbar {
+        width: 8px;
+        background: rgba(0,0,0,0.2);
+    }
+    
+    .vuln-section {
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    }
+
+    #pseudo-code::-webkit-scrollbar-thumb,
+    #assembly-code::-webkit-scrollbar-thumb {
+        background: #8B5CF6;
+        border-radius: 4px;
+    }
+
+    #pseudo-code::-webkit-scrollbar-track,
+    #assembly-code::-webkit-scrollbar-track {
+        background: rgba(139,92,246,0.1);
+    }
+    .magic-card {
+        background: rgba(139, 92, 246, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(31,38,135,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    .magic-card::before {
+        content: '';
+        position: absolute;
+        top:0; left:0; right:0;
+        height:2px;
+        background: linear-gradient(90deg,transparent,rgba(139,92,246,0.8),transparent);
+        animation: scanline 2s linear infinite;
+    }
+    .cyber-border {
+        border:2px solid transparent;
+        background-image: linear-gradient(black,black),linear-gradient(135deg,rgba(139,92,246,0.8) 0%,rgba(196,181,253,0.8) 100%);
+        background-origin: border-box;
+        background-clip: padding-box,border-box;
+    }
+    .particle {
+        position:absolute;
+        width:3px; height:3px;
+        background:rgba(255,255,255,0.5);
+        border-radius:50%;
+        pointer-events:none;
+    }
+    .glass-card {
+        background:rgba(31,41,55,0.9);
+        border:1px solid rgba(139,92,246,0.3);
+        backdrop-filter:blur(10px);
+    }
+    .resize-handle {
+        position:absolute;
+        right:0; bottom:0;
+        width:20px; height:20px;
+        cursor:nwse-resize;
+        background:#8B5CF6;
+        border-radius:4px 0 0 0;
+    }
+    .vuln-detail-card {
+        background:rgba(255,255,255,0.05);
+        border-left:3px solid #8B5CF6;
+        padding:1rem;
+        margin:1rem 0;
+    }
+    .call-chain {
+        padding-left:1.5rem;
+        border-left:2px solid rgba(139,92,246,0.5);
+        margin:1rem 0;
+    }
+    .function-name {
+        cursor:pointer;
+        transition:all 0.3s ease;
+    }
+    .function-name:hover {
+        color:#C4B5FD !important;
+        text-shadow:0 0 10px rgba(139,92,246,0.5);
+    }
+    </style>
+    
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8 min-h-screen">
+        <!-- 头部 -->
+        <div class="text-center mb-12">
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
+            <h1 class="text-4xl font-bold mb-4 relative inline-block">
+                <span class="relative z-10">🪄二进制安全分析报告🪄</span>
+                <div class="absolute -inset-1 bg-gradient-to-r from-purple-600 to-purple-400 opacity-50 blur"></div>
+            </h1>
+            <p class="text-lg opacity-80">Power by HRP@Nepnep</p>
+            <br>
+            <p class="text-lg opacity-80">🕛报告生成时间：2025-02-28 01:39:23</p>
+
+            <div class="flex items-center justify-center gap-4 mt-4">
+                <a href="https://github.com/hexian2001" class="flex items-center gap-2 text-white/80 hover:text-white">
+                    <i class="ri-github-line"></i>
+                    Visit My GitHub
+                </a>
+                <span class="text-white/60" id="report-time"></span>
+            </div>
+        </div>
+
+        <!-- 主要内容 -->
+        <div class="grid gap-8 max-w-6xl mx-auto">
+            <!-- 风险概况 -->
+            <div class="magic-card rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <i class="ri-error-warning-line text-yellow-400"></i>
+                        风险概况
+                    </h2>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">高危漏洞数量</p>
+                        <p class="text-3xl font-bold text-red-400">1</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">中危漏洞数量</p>
+                        <p class="text-3xl font-bold text-yellow-400">0</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">低危漏洞数量</p>
+                        <p class="text-3xl font-bold text-green-400">0</p>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-6 cyber-border">
+                        <p class="text-lg mb-2">总漏洞数量</p>
+                        <p class="text-3xl font-bold text-blue-400">1</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 漏洞详情 -->
+                <div class="magic-card rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                        <h2 class="text-xl font-semibold">漏洞详情</h2>
+                        <div class="relative w-full md:w-64">
+                            <input 
+                                type="text" 
+                                id="vulnSearch" 
+                                placeholder="搜索漏洞..." 
+                                class="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-500 transition-all"
+                            >
+                            <i class="ri-search-line absolute right-3 top-3 text-white/50"></i>
+                        </div>
+                    </div>
+                    <!-- 滚动容器 -->
+                    <div class="overflow-x-auto">
+                        <div class="space-y-6 min-w-[600px]" id="vulnContainer">
+                            
+        <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">漏洞 1: access</h3>
+                        <div class="flex items-center gap-4 text-sm text-white/60">
+                            <span>当前LLM数据无法被JSON格式化，为避免您的API浪费，进行替代化返回，失败路径请查看下面的description</span>
+                            <span>CVSS: 10.0</span>
+                            <span class="text-red-400 font-medium">高危</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln1')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln1-arrow"></i>
+                </button>
+            </div>
+            <div id="vuln1-content" class="hidden space-y-4">
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">漏洞描述</h4>
+                    <p class="text-white/80">[{'path': 'sub_CE08@0xce88 → access@0x774c', 'depth': 2, 'entry': '0xce88', 'exit': '0x774c'}]</p>
+                </div>
+                <div class="bg-white/10 rounded p-4 vuln-section">
+                    <h4 class="font-medium mb-2">触发流程</h4>
+                    <p class="font-mono text-sm text-white/80">
+                        重点用语言分析，漏洞是怎么触发的，结合上下文代码逻辑，详细分析每个危险函数的参数，先了解每个危险函数的参数再去分析，避免误报，而且要给出核心函数的地址是哪些
+                    </p>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-node-tree mr-2"></i>
+                        调用链路（点击函数名可显示伪代码与汇编代码）
+                    </h3>
+                    <div class="call-chain">
+                        
+                <div class="tree-node group flex items-center min-w-max">
+                    <span class="text-purple-400 mx-2">›</span>
+                    <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                        data-function="sub_CE08@0xce88">
+                        sub_CE08@0xce88
+                    </span>
+                </div>
+            
+                <div class="tree-node group flex items-center min-w-max">
+                    <span class="text-purple-400 mx-2">›</span>
+                    <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                        data-function="access@0x774c">
+                        access@0x774c
+                    </span>
+                </div>
+            
+                    </div>
+                </div>
+                <div class="vuln-section">
+                    <h3 class="text-lg mb-2 flex items-center">
+                        <i class="ri-tools-line mr-2"></i>
+                        修复建议
+                    </h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li class="text-white/80">代码修改建议</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+          <!-- 移除外层vuln-section包裹 -->
+                        </div>
+                    </div>
+
+                    <div class="pagination-controls flex items-center justify-center gap-4 mt-4">
+                        <button id="prevPage" class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>上一页</button>
+                        <span id="pageInfo" class="text-white/80">第1页/共3页</span>
+                        <button id="nextPage" class="px-4 py-2 bg-purple-500 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed">下一页</button>
+                    </div>
+                </div>
+        </div>
+
+        <!-- 代码查看卡片（左右分栏版） -->
+        <div id="code-card" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4">
+            <div class="glass-card rounded-xl p-6 max-w-6xl w-full h-[90vh] flex flex-col" style="min-width: 800px; min-height: 500px;">
+                <div class="resize-handle"></div>
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-purple-400/30">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="ri-code-s-slash-line"></i>
+                        代码解析 - <span id="current-function" class="text-purple-300"></span>
+                    </h3>
+                    <button id="close-btn" class="text-2xl hover:text-purple-400 transition-transform hover:scale-125">
+                        ×
+                    </button>
+                </div>
+                
+                <!-- 左右分栏布局 -->
+                <div class="flex-1 grid grid-cols-2 gap-6 overflow-hidden" style="min-height: 400px;">
+                    <!-- 伪代码区域 -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <div id="pseudo-code" class="flex-1 overflow-auto font-mono text-sm p-4 bg-black/20 rounded-lg">
+                            <div class="mb-2 flex items-center gap-2 text-purple-300">
+                                <i class="ri-file-code-line"></i>
+                                <span>伪代码分析</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 汇编代码区域 -->
+                    <div class="flex-1 flex flex-col overflow-hidden">
+                        <div id="assembly-code" class="flex-1 overflow-auto font-mono text-sm p-4 bg-black/20 rounded-lg">
+                            <div class="text-secondary mb-4 flex items-center gap-2">
+                                <i class="ri-information-line"></i>
+                                <span>点击调用链中的函数查看详细代码</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状态栏 -->
+                <div class="mt-4 pt-2 border-t border-purple-400/30 text-sm text-white/60 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span id="code-status" class="flex items-center gap-2">
+                            <i class="ri-terminal-box-line"></i>
+                            <span>就绪</span>
+                        </span>
+                        <span id="code-location" class="flex items-center gap-2">
+                            <i class="ri-map-pin-line"></i>
+                            <span>链路上下一调用地址: 0x0000</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+    const globalCodeDict = {"sub_CE08": {"pseudo_code": ["int __fastcall sub_CE08(int a1, int a2, char *a3)\n{\n  sub_83E8(3, \"%s(%d), status = %d\\n\", \"getOOKLASpeedTestResult_ErrorCode\", 6263, 0);\n  if ( acosNvramConfig_match(\"speedtest_running\", \"1\") )\n  {\n    sub_83E8(3, \"speedtest is running\\n\");\n    strcpy(a3, \"1\");\n  }\n  else if ( acosNvramConfig_match(\"speedtest_cancel\", \"1\") )\n  {\n    strcpy(a3, \"0\");\n    NewErrorCode = 0;\n  }\n  else if ( access(\"/tmp/speedtest_result.log\", 0) == -1 )\n  {\n    strcpy(a3, \"2\");\n    NewErrorCode = 0;\n  }\n  else\n  {\n    NewErrorCode = 0;\n    strcpy(a3, \"0\");\n  }\n  return 0;\n}"], "assembly": ["0xce08: PUSH            {R4-R7,LR}\n0xce0c: MOV             R1, #0\n0xce10: LDR             R4, =(_GLOBAL_OFFSET_TABLE_ - 0xCE34)\n0xce14: SUB             SP, SP, #0xC\n0xce18: MOV             R5, R2\n0xce1c: MOV             R0, #3\n0xce20: LDR             R2, =(aGetbwctrloptio - 0x5C9A8); \"getBWCtrlOption\"\n0xce24: MOVW            R3, #0x1877\n0xce28: STR             R1, [SP,#0x20+var_20]\n0xce2c: ADD             R4, PC, R4; _GLOBAL_OFFSET_TABLE_\n0xce30: LDR             R1, =(aSDStatusD - 0x5C9A8); \"%s(%d), status = %d\\n\"\n0xce34: ADD             R2, R4, R2; \"getBWCtrlOption\"\n0xce38: LDR             R6, =(a5g1_0+4 - 0x5C9A8); \"1\"\n0xce3c: ADD             R2, R2, #0xB4\n0xce40: ADD             R1, R4, R1; \"%s(%d), status = %d\\n\"\n0xce44: BL              sub_83E8\n0xce48: LDR             R0, =(aSpeedtestRunni - 0x5C9A8); \"speedtest_running\"\n0xce4c: ADD             R6, R4, R6; \"1\"\n0xce50: MOV             R1, R6\n0xce54: ADD             R0, R4, R0; \"speedtest_running\"\n0xce58: BL              acosNvramConfig_match\n0xce5c: SUBS            R7, R0, #0\n0xce60: BNE             loc_CEE4\n0xce64: LDR             R0, =(aSpeedtestCance - 0x5C9A8); \"speedtest_cancel\"\n0xce68: MOV             R1, R6\n0xce6c: ADD             R0, R4, R0; \"speedtest_cancel\"\n0xce70: BL              acosNvramConfig_match\n0xce74: SUBS            R6, R0, #0\n0xce78: BNE             loc_CEC0\n0xce7c: LDR             R0, =(aTmpSpeedtestRe - 0x5C9A8); \"/tmp/speedtest_result.log\"\n0xce80: MOV             R1, R6; type\n0xce84: ADD             R0, R4, R0; \"/tmp/speedtest_result.log\"\n0xce88: BL              access\n0xce8c: CMN             R0, #1\n0xce90: BEQ             loc_CF08\n0xce94: LDR             R3, =(NewErrorCode_ptr - 0x5C9A8)\n0xce98: MOV             R0, R5; dest\n0xce9c: LDR             R1, =(aStrlenFilename+0x14 - 0x5C9A8); \"0\"\n0xcea0: MOV             R2, #2; n\n0xcea4: LDR             R3, [R4,R3]; NewErrorCode\n0xcea8: ADD             R1, R4, R1; \"0\" ; src\n0xceac: STR             R6, [R3]\n0xceb0: BL              memcpy\n0xceb4: MOV             R0, #0\n0xceb8: ADD             SP, SP, #0xC\n0xcebc: POP             {R4-R7,PC}\n0xcec0: LDR             R1, =(aStrlenFilename+0x14 - 0x5C9A8); \"0\"\n0xcec4: MOV             R0, R5; dest\n0xcec8: MOV             R2, #2; n\n0xcecc: ADD             R1, R4, R1; \"0\" ; src\n0xced0: BL              memcpy\n0xced4: LDR             R3, =(NewErrorCode_ptr - 0x5C9A8)\n0xced8: LDR             R3, [R4,R3]; NewErrorCode\n0xcedc: STR             R7, [R3]\n0xcee0: B               loc_CEB4\n0xcee4: LDR             R1, =(aSpeedtestIsRun - 0x5C9A8); \"speedtest is running\\n\"\n0xcee8: MOV             R0, #3\n0xceec: ADD             R1, R4, R1; \"speedtest is running\\n\"\n0xcef0: BL              sub_83E8\n0xcef4: MOV             R0, R5; dest\n0xcef8: MOV             R1, R6; src\n0xcefc: MOV             R2, #2; n\n0xcf00: BL              memcpy\n0xcf04: B               loc_CEB4\n0xcf08: LDR             R1, =(a5g2_0+4 - 0x5C9A8); \"2\"\n0xcf0c: MOV             R0, R5; dest\n0xcf10: MOV             R2, #2; n\n0xcf14: ADD             R1, R4, R1; \"2\" ; src\n0xcf18: BL              memcpy\n0xcf1c: LDR             R3, =(NewErrorCode_ptr - 0x5C9A8)\n0xcf20: LDR             R3, [R4,R3]; NewErrorCode\n0xcf24: STR             R6, [R3]\n0xcf28: B               loc_CEB4"]}, "access": {"pseudo_code": ["// attributes: thunk\nint access(const char *name, int type)\n{\n  return __imp_access(name, type);\n}"], "assembly": ["0x774c: ADR             R12, 0x7754\n0x7750: ADD             R12, R12, #0x55000\n0x7754: LDR             PC, [R12,#(access_ptr - 0x5C754)]!; __imp_access"]}};
+    
+    // 分页功能实现
+    let currentFilteredVulnItems = [];
+    let currentPage = 0;
+    const itemsPerPage = 3;
+
+    function updatePagination() {
+        const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage) || 1;
+        
+        // 调整当前页数
+        currentPage = Math.max(0, Math.min(currentPage, totalPages - 1));
+        
+        // 强制隐藏所有条目
+        document.querySelectorAll('.vuln-item').forEach(el => el.style.display = 'none');
+
+        // 仅显示当前页条目
+        currentFilteredVulnItems.slice(
+            currentPage * itemsPerPage,
+            (currentPage + 1) * itemsPerPage
+        ).forEach(({element}) => {
+            element.style.display = 'block';
+            const content = element.querySelector('[id$="-content"]');
+            if (content) {
+                
+                element.querySelector('[id$="-arrow"]').style.transform = 'rotate(180deg)';
+            }
+        });
+        
+        // 更新按钮状态
+        document.getElementById('prevPage').disabled = currentPage === 0;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages - 1;
+        document.getElementById('pageInfo').textContent = currentFilteredVulnItems.length === 0 
+            ? '无结果' 
+            : `第${currentPage + 1}页/共${totalPages}页`;
+        
+        // 隐藏所有条目并显示当前页
+        document.querySelectorAll('.vuln-item').forEach(el => el.style.display = 'none');
+        currentFilteredVulnItems.slice(
+            currentPage * itemsPerPage,
+            (currentPage + 1) * itemsPerPage
+        ).forEach(({element}) => {
+            element.style.display = 'block';
+            // 自动展开当前页条目
+            const content = element.querySelector('[id$="-content"]');
+            if (content && content.classList.contains('hidden')) {
+                
+                element.querySelector('[id$="-arrow"]').style.transform = 'rotate(180deg)';
+            }
+        });
+
+        // 滚动到顶部
+        if (currentFilteredVulnItems.length > 0) {
+            const firstVisible = currentFilteredVulnItems[currentPage * itemsPerPage]?.element;
+            firstVisible?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+    }
+
+    // 初始化搜索和分页
+    function initSearch() {
+        const vulnItems = Array.from(document.querySelectorAll('.vuln-item'));
+        currentFilteredVulnItems = vulnItems.map(element => ({
+            element,
+            text: element.innerText.toLowerCase()
+        }));
+        
+        // 搜索功能
+        document.getElementById('vulnSearch').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase().trim();
+            currentFilteredVulnItems = vulnItems
+                .map(element => ({
+                    element,
+                    text: element.innerText.toLowerCase()
+                }))
+                .filter(({text}) => text.includes(term));
+            currentPage = 0;
+            updatePagination();
+        });
+    }
+    // 折叠面板切换
+    function toggleSection(id) {
+        const content = document.getElementById(`${id}-content`);
+        const arrow = document.getElementById(`${id}-arrow`);
+        const allContents = document.querySelectorAll('[id$="-content"]');
+        const allArrows = document.querySelectorAll('[id$="-arrow"]');
+        
+        allContents.forEach(el => el !== content && el.classList.add('hidden'));
+        allArrows.forEach(el => el !== arrow && (el.style.transform = ''));
+        
+        content.classList.toggle('hidden');
+        arrow.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+        !content.classList.contains('hidden') && content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initSearch();
+        // 新增初始化分页
+        currentFilteredVulnItems = Array.from(document.querySelectorAll('.vuln-item'))
+            .map(element => ({
+                element,
+                text: element.innerText.toLowerCase()
+            }));
+        updatePagination();  // 关键初始化调用
+
+        // 分页按钮事件绑定
+        document.getElementById('prevPage').addEventListener('click', () => {
+            currentPage = Math.max(0, currentPage - 1);
+            updatePagination();
+        });
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage);
+            currentPage = Math.min(totalPages - 1, currentPage + 1);
+            updatePagination();
+        });
+        //删除重复分页按钮响应 2025-2月28
+
+        // 函数点击交互
+        document.querySelectorAll('.function-name').forEach(func => {
+            func.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const [functionName, address] = func.dataset.function.split('@');
+                const codeData = globalCodeDict[functionName];
+                
+                if (codeData) {
+                    // 同时更新左右两列
+                    document.getElementById('pseudo-code').innerHTML = `
+                        <div class="text-secondary mb-2">📜 伪代码</div>
+                        <pre class="text-white/80">${codeData.pseudo_code.join('\n')}</pre>
+                    `;
+                    document.getElementById('assembly-code').innerHTML = `
+                        <div class="text-secondary mb-2">📜 汇编代码</div>
+                        <pre class="text-white/80">${codeData.assembly.join('\n')}</pre>
+                    `;
+                    
+                    // 更新状态信息
+                    document.getElementById('current-function').textContent = functionName;
+                    document.getElementById('code-location').innerHTML = `
+                        <i class="ri-map-pin-line"></i>
+                        <span>链路上下一调用点地址: ${address}</span>
+                    `;
+                    document.getElementById('code-status').innerHTML = `
+                        <i class="ri-terminal-box-line"></i>
+                        <span>已加载: ${functionName}</span>
+                    `;
+                    
+                    // 显示代码卡片
+                    document.getElementById('code-card').style.display = 'block';
+                }
+            });
+        });
+
+        // 代码卡片交互
+        let isDragging = false, isResizing = false;
+        let startX, startY, startWidth, startHeight, startLeft, startTop;
+        const card = document.getElementById('code-card');
+        const contentBox = card.querySelector('.glass-card');
+        const resizeHandle = card.querySelector('.resize-handle');
+
+        // 拖动处理
+        contentBox.addEventListener('mousedown', (e) => {
+            if(e.target !== resizeHandle) {
+                isDragging = true;
+                [startX, startY] = [e.clientX, e.clientY];
+                [startLeft, startTop] = [parseFloat(contentBox.style.left), parseFloat(contentBox.style.top)];
+            }
+        });
+
+        // 调整大小处理
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            [startX, startY] = [e.clientX, e.clientY];
+            [startWidth, startHeight] = [contentBox.offsetWidth, contentBox.offsetHeight];
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if(isDragging) {
+                contentBox.style.left = `${startLeft + e.clientX - startX}px`;
+                contentBox.style.top = `${startTop + e.clientY - startY}px`;
+                contentBox.style.transform = 'none';
+            }
+            if(isResizing) {
+                contentBox.style.width = `${Math.max(400, startWidth + e.clientX - startX)}px`;
+                contentBox.style.height = `${Math.max(300, startHeight + e.clientY - startY)}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = isResizing = false;
+        });
+
+        // 关闭按钮
+        document.getElementById('close-btn').addEventListener('click', () => {
+            card.style.display = 'none';
+        });
+
+        // 粒子效果初始化
+        Array.from({length: 50}).forEach(() => {
+            const particle = document.createElement('div');
+            Object.assign(particle.style, {
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `sparkle ${2 + Math.random() * 3}s infinite`
+            });
+            particle.className = 'particle';
+            document.body.appendChild(particle);
+        });
+
+        // 初始化状态栏
+        function updateCodeStatus() {
+            const pseudoLines = document.getElementById('pseudo-code').querySelector('pre').textContent.split('\n').length;
+            const assemblyLines = document.getElementById('assembly-code').querySelector('pre').textContent.split('\n').length;
+            const totalSize = new Blob([
+                document.getElementById('pseudo-code').textContent,
+                document.getElementById('assembly-code').textContent
+            ]).size / 1024;
+            
+            document.getElementById('code-lines').innerHTML = `
+                <i class="ri-numbers-line"></i>
+                <span>行数: 伪码${pseudoLines} / 汇编${assemblyLines}</span>
+            `;
+            document.getElementById('code-size').innerHTML = `
+                <i class="ri-database-2-line"></i>
+                <span>大小: ${totalSize.toFixed(2)} KB</span>
+            `;
+        }
+        updateCodeStatus();
+    });
+
+    
+    </script>
+    
+</body>
+</html>
+    
