@@ -599,7 +599,6 @@ def analyze_danger_calls(params, debug):
                         "\n".join(pseudo_code),
                         "\n".join(asm_code)
                     ))
-
                     # 将 pseudo_code 和 assembly 存储到全局字典中
                     # 检查并避免存储重复的代码片段
                     pseudo_code_str = "\n".join(pseudo_code)
@@ -662,25 +661,6 @@ def analyze_danger_calls(params, debug):
           retry_if_exception_type(openai.APITimeoutError)),
     before_sleep=lambda _: print("触发重试机制，等待API恢复...")
 )
-def analyze_with_llm(debug, params, analysis_data, console_output):
-    """原始LLM调用逻辑完全保留"""
-    client = openai.OpenAI(api_key=params['api_key'])
-    
-    try:
-        response = client.chat.completions.create(
-            model=params['llm_model'],
-            messages=[
-                {"role": "system", "content": "你是一个全球顶尖的二进制安全分析专家"},
-                {"role": "user", "content": console_output}
-            ],
-            temperature=params['temperature'],
-            max_tokens=params['max_output_tokens']
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        if debug:
-            print(f"LLM API Error: {str(e)}")
-        return f"分析失败：{str(e)}"
 
 def batch_analyze_with_llm(full_data, debug, params):
     BATCH_SIZE = params['batch_size']
@@ -769,6 +749,7 @@ def batch_analyze_with_llm(full_data, debug, params):
                                     ]
                                 }
                             }
+                            
                             chain_nodes.append(code_context)
                             code_snippets.append({
                                 "address": node["address"],
@@ -826,10 +807,10 @@ def batch_analyze_with_llm(full_data, debug, params):
 
 === 调用链上下文 ===
 共有 {len(batch_context)} 条调用链需要分析"""
-
+                    
+                    seen_functions = set()#增加局部标记，修复多次传入重复汇编的错误 2025-2月28
                     for chain in batch_context:
                         llm_prompt += f"""
-                        
 ▌ 调用链 {chain['chain_id']} 
 • 完整路径：{chain['call_path'][0]}
 • 深度：{chain['path_analysis']['depth']} 层
@@ -838,15 +819,15 @@ def batch_analyze_with_llm(full_data, debug, params):
 [风险系数：{chain['risk_factors']['buffer_operations']} 缓冲区操作 / {chain['risk_factors']['dangerous_calls']} 危险调用]"""
 
                         for node in chain["nodes"]:
-                            llm_prompt += f"""
-                            
-▸ 函数 {node['func_name']} ({node['address']})
-[伪代码片段]
-{node['pseudo_code']}
+                            if node['func_name'] not in seen_functions:
+                                llm_prompt += f"""
+    ▸ 函数 {node['func_name']} ({node['address']})
+    [伪代码片段]
+    {node['pseudo_code']}
 
-[汇编片段] 
-{node['asm_code']}"""
-
+    [汇编片段] 
+    {node['asm_code']}"""
+                                seen_functions.add(node['func_name'])  # 登记已处理函数
                     llm_prompt += f"""
 
 === 分析要求 ===
@@ -863,7 +844,7 @@ def batch_analyze_with_llm(full_data, debug, params):
                     if elapsed < REQUEST_INTERVAL:
                         sleep_time = REQUEST_INTERVAL - elapsed
                         time.sleep(sleep_time)
-                    
+
                     # 提交异步任务（添加future记录）
                     future = executor.submit(
                         _async_llm_analysis,
@@ -884,16 +865,8 @@ def batch_analyze_with_llm(full_data, debug, params):
                     print("[中止] 停止结果收集")
                     break
                 
-                try:
-                    result = future.result()
-                    json_report["analysis"].append(result)
-                except Exception as e:
-                    if debug:
-                        print(f"异步处理异常: {str(e)}")
-                    json_report["analysis"].append({
-                        "target_function": "ERROR",
-                        "llm_response": "用户中止" if async_controller["should_stop"] else f"处理失败: {str(e)}"
-                    })
+                result = future.result()
+                json_report["analysis"].append(result)
 
     finally:
         # 资源清理（新增部分）
@@ -931,16 +904,14 @@ def _async_llm_analysis(danger_func, batch_context, llm_request_data, llm_prompt
             "batch_metadata": llm_request_data["metadata"]
         }
     
-    """异步处理包装函数（完整异常处理）"""
-    try:
-        llm_response = analyze_with_llm(
+    llm_response = analyze_with_llm(
             debug,
             params,
             analysis_data=llm_request_data,
             console_output=llm_prompt
         )
-        
-        return {
+    
+    return {
             "target_function": danger_func,
             "chain_context": {
                 "paths": [chain["call_path"] for chain in batch_context],
@@ -949,45 +920,57 @@ def _async_llm_analysis(danger_func, batch_context, llm_request_data, llm_prompt
             "llm_response": llm_response,
             "batch_metadata": llm_request_data["metadata"]
         }
-    except Exception as e:
-        return {
-            "target_function": danger_func,
-            "llm_response": f"异步处理失败: {str(e)}",
-            "batch_metadata": llm_request_data["metadata"]
-        }
+
+
+#2025-2月28 预处理切块核心数据，进行穿插提示词，避免LLM忘记核心要求。
+def split_with_reminders(text, reminder="[重要提示]请严格保持JSON格式", chunk_size=200000):
+    """
+    按指定长度分块并插入提示词（工业级分块方案）
+    
+    参数：
+    - text: 原始文本
+    - chunk_size: 分块大小（字符数）
+    - reminder: 提示词内容
+    
+    返回：
+    - 分块后的文本列表（含插入的提示词）
+    """
+    chunks = []
+    total_len = len(text)
+    
+    # 计算分块数
+    num_chunks = (total_len + chunk_size - 1) // chunk_size
+    
+    for i in range(num_chunks):
+        start = i * chunk_size
+        end = start + chunk_size
+        chunk = text[start:end]
+        
+        # 末尾添加换行避免截断关键内容
+        if end < total_len and not text[end].isspace():
+            chunk += '\n...\n'  # 添加截断标记
+        
+        chunks.append(chunk)
+        
+        # 除最后一块外都添加提示词
+        if i != num_chunks - 1:
+            chunks.append(f"\n\n{reminder}\n\n")
+    
+    return chunks
 
 def analyze_with_llm(debug, params, analysis_data, console_output):
     if debug:
         print(console_output)
+
+    
     client = OpenAI(
         api_key=params['api_key'],
         base_url=params['api_url'],
         timeout=(10, 200) # 连接超时 10 秒，读取超时 200 秒
     )
-    
-    # 构造自然语言提示词
-    current_danger_func = analysis_data["metadata"]["danger_function"]  # 新增
-    prompt = f"""
-二进制安全分析请求：
-=== 元信息 ===
-* 风险函数：{current_danger_func}
-* 严格按照下面的JSON格式输出，禁止修改任何字段名，只允许输出JSON格式，但是不需要用```json来标注JSON格式，且回复尽可能使用中文
-* 一定要仔细分析结合上下文，尽量避免假阳性报告，对于参数内容需要仔细辨别
-* 详细分析每个危险函数的参数，避免误报
-* 当前函数的文档{DANGER_FUNCTIONS_DOC[current_danger_func]}
-=== 详细分析数据 ===
-{console_output}
 
-"""
-
-    # 调用LLM接口
-    response = client.chat.completions.create(
-        model=params['model'],
-        messages=[
-            {
-                "role": "system",
-                "content": '''作为全球顶尖二进制安全分析师和利用员，请执行以下操作：
-
+    sys_prompt='''********************核心提示词：你的核心任务********************
+作为全球顶尖二进制安全分析师和利用员，请执行以下操作：
 1. 漏洞利用分析：
    - 识别具体的漏洞类型(CWE)
    - 分析利用所需的控制条件
@@ -1018,7 +1001,7 @@ def analyze_with_llm(debug, params, analysis_data, console_output):
     "victim_func": "必须只针对当前元信息中的风险函数进行分析，忽略其他，如有联动漏洞可以连带分析但是以元信息中的风险函数进行分析为主，如有多个函数可以用逗号分隔"
   },
   "exploit": {
-    "how_exploit": ["重点用语言分析，漏洞是怎么触发的，结合上下文代码逻辑，详细分析每个危险函数的参数，先了解每个危险函数的参数再去分析，避免误报"]
+    "how_exploit": ["重点用语言分析，漏洞是怎么触发的，结合上下文代码逻辑，详细分析每个危险函数的参数，先了解每个危险函数的参数再去分析，避免误报，而且要给出核心函数的地址是哪些"]
   },
   "mitigation": {
     "code_fix": ["代码修改建议"],
@@ -1026,6 +1009,30 @@ def analyze_with_llm(debug, params, analysis_data, console_output):
     "runtime_protections": ["系统级防护"]
   }
 }'''
+    split_with_reminders(console_output,sys_prompt,chunk_size=200 * 1024)
+
+    # 构造自然语言提示词
+    current_danger_func = analysis_data["metadata"]["danger_function"]  # 新增
+    prompt = f"""
+二进制安全分析请求：
+=== 元信息 ===
+* 风险函数：{current_danger_func}
+* 严格按照下面的JSON格式输出，禁止修改任何字段名，只允许输出JSON格式，但是不需要用```json来标注JSON格式，且回复尽可能使用中文
+* 一定要仔细分析结合上下文，尽量避免假阳性报告，对于参数内容需要仔细辨别
+* 详细分析每个危险函数的参数，避免误报
+* 当前函数的文档{DANGER_FUNCTIONS_DOC[current_danger_func]}
+=== 详细分析数据 ===
+{console_output}
+
+"""
+
+    # 调用LLM接口
+    response = client.chat.completions.create(
+        model=params['model'],
+        messages=[
+            {
+                "role": "system",
+                "content": sys_prompt
             },
             {
                 "role": "user",
@@ -1037,6 +1044,7 @@ def analyze_with_llm(debug, params, analysis_data, console_output):
     )
     # 处理流式响应
     print("\n[LLM Analysis]")
+
     full_response = ""
     for chunk in response:
         if chunk.choices[0].delta.content:
@@ -1058,7 +1066,26 @@ def analyze_with_llm(debug, params, analysis_data, console_output):
         cleaned = clean_json(full_response)
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        return {"error": "Invalid LLM response format"}
+        fake=f"""{{
+  "vulnerability": {{
+    "cwe_id": "当前LLM数据无法被JSON格式化，为避免您的API浪费，进行替代化返回，失败路径请查看下面的description",
+    "description": "{analysis_data['metadata']['current_call_paths']}",
+    "cvss": {{
+      "score": 10,
+      "vector": "使用中文描述"
+    }},
+    "victim_func": "必须只针对当前元信息中的风险函数进行分析，忽略其他，如有联动漏洞可以连带分析但是以元信息中的风险函数进行分析为主，如有多个函数可以用逗号分隔"
+  }},
+  "exploit": {{
+    "how_exploit": ["重点用语言分析，漏洞是怎么触发的，结合上下文代码逻辑，详细分析每个危险函数的参数，先了解每个危险函数的参数再去分析，避免误报，而且要给出核心函数的地址是哪些"]
+  }},
+  "mitigation": {{
+    "code_fix": ["代码修改建议"],
+    "compiler_flags": ["防护编译选项"],
+    "runtime_protections": ["系统级防护"]
+  }}
+}}"""
+        return json.loads(fake)
 
 
 def isolate_call_chains(analysis_entry):
@@ -1434,15 +1461,8 @@ def generate_enterprise_report_html(formatted_json):
             currentPage = Math.min(totalPages - 1, currentPage + 1);
             updatePagination();
         }});
-        document.getElementById('prevPage').addEventListener('click', () => {{
-                    currentPage = Math.max(0, currentPage - 1);
-                    updatePagination();
-                }});
-        document.getElementById('nextPage').addEventListener('click', () => {{
-                    const totalPages = Math.ceil(currentFilteredVulnItems.length / itemsPerPage);
-                    currentPage = Math.min(totalPages - 1, currentPage + 1);
-                    updatePagination();
-                }});
+        //删除重复分页按钮响应 2025-2月28
+
         // 函数点击交互
         document.querySelectorAll('.function-name').forEach(func => {{
             func.addEventListener('click', (e) => {{
@@ -1659,7 +1679,7 @@ def generate_enterprise_report_html(formatted_json):
     for idx, entry in enumerate(formatted_json["detailed_analysis"], 1):
         risk_level, text_color = get_risk_level(entry['vulnerability']['cvss']['score'])
         
-        vuln_section = f"""
+        vuln_section = """
         <div class="bg-white/5 rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 vuln-item">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
@@ -1667,27 +1687,27 @@ def generate_enterprise_report_html(formatted_json):
                         <i class="ri-shield-keyhole-line text-red-400 text-xl"></i>
                     </div>
                     <div>
-                        <h3 class="font-semibold text-lg">漏洞 {idx}: {entry['target_function']}</h3>
+                        <h3 class="font-semibold text-lg">漏洞 {}: {}</h3>
                         <div class="flex items-center gap-4 text-sm text-white/60">
-                            <span>{entry['vulnerability']['type']}</span>
-                            <span>CVSS: {entry['vulnerability']['cvss']['score']}</span>
-                            <span class="{text_color} font-medium">{risk_level}</span>
+                            <span>{}</span>
+                            <span>CVSS: {}</span>
+                            <span class="{} font-medium">{}</span>
                         </div>
                     </div>
                 </div>
-                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln{idx}')">
-                    <i class="ri-arrow-down-s-line transition-transform" id="vuln{idx}-arrow"></i>
+                <button class="text-white/60 hover:text-white" onclick="toggleSection('vuln{}')">
+                    <i class="ri-arrow-down-s-line transition-transform" id="vuln{}-arrow"></i>
                 </button>
             </div>
-            <div id="vuln{idx}-content" class="hidden space-y-4">
+            <div id="vuln{}-content" class="hidden space-y-4">
                 <div class="bg-white/10 rounded p-4 vuln-section">
                     <h4 class="font-medium mb-2">漏洞描述</h4>
-                    <p class="text-white/80">{entry['vulnerability']['description']}</p>
+                    <p class="text-white/80">{}</p>
                 </div>
                 <div class="bg-white/10 rounded p-4 vuln-section">
                     <h4 class="font-medium mb-2">触发流程</h4>
                     <p class="font-mono text-sm text-white/80">
-                        {'<br>'.join(entry['vulnerability']['how_exploit'])}
+                        {}
                     </p>
                 </div>
                 <div class="vuln-section">
@@ -1696,14 +1716,7 @@ def generate_enterprise_report_html(formatted_json):
                         调用链路（点击函数名可显示伪代码与汇编代码）
                     </h3>
                     <div class="call-chain">
-                        {"".join([f'''
-                        <div class="tree-node group flex items-center min-w-max">
-                            {'<span class="text-purple-400 mx-2">›</span>'.join([f'''
-                            <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
-                                data-function="{node}">
-                                {node}
-                            </span>''' for node in chain["path"]])}
-                        </div>''' for chain in entry["call_chains"]])}
+                        {}
                     </div>
                 </div>
                 <div class="vuln-section">
@@ -1712,12 +1725,34 @@ def generate_enterprise_report_html(formatted_json):
                         修复建议
                     </h3>
                     <ul class="list-disc list-inside space-y-2">
-                        {"".join([f'<li class="text-white/80">{fix}</li>' for fix in entry["mitigation"]["code_fix"]])}
+                        {}
                     </ul>
                 </div>
             </div>
         </div>
-        """
+        """.format(
+            idx,
+            entry['target_function'],
+            entry['vulnerability']['type'],
+            entry['vulnerability']['cvss']['score'],
+            text_color,
+            risk_level,
+            idx,  # 添加动态 ID
+            idx,  # 添加动态 ID
+            idx,  # 添加动态 ID
+            entry['vulnerability']['description'],
+            '<br>'.join(entry['vulnerability']['how_exploit']),
+            ''.join([f'''
+                <div class="tree-node group flex items-center min-w-max">
+                    <span class="text-purple-400 mx-2">›</span>
+                    <span class="function-name text-white/80 hover:text-purple-300 cursor-pointer" 
+                        data-function="{node}">
+                        {node}
+                    </span>
+                </div>
+            ''' for chain in entry["call_chains"] for node in chain["path"]]),
+            ''.join([f'<li class="text-white/80">{fix}</li>' for fix in entry["mitigation"]["code_fix"]])
+        )
         vuln_sections.append(vuln_section)
 
     # HTML主体结构
