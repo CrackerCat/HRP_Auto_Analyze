@@ -61,6 +61,7 @@ C:\Python312\python.exe  -m pip install openai tenacity
 ---
 
 ## 🎮 **使用说明书**  
+0. 模型只推荐使用阿里云百炼的1M上下文的turbo，除此外都不是很推荐。同时目前建议是10-20的batch_size进行分析，目前哪怕LLM出错了也不会直接报错退出浪费用户的API。
 
 1. 在IDA **ALT+F7**选择我 然后开始参数配置吧
 
