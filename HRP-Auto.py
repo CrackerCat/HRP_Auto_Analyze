@@ -1324,6 +1324,13 @@ def isolate_call_chains(analysis_entry):
     return chains
 
 
+def js_json_escape(data):
+    # 首次JSON序列化
+    json_str = json.dumps(data, ensure_ascii=False)
+    # 替换HTML敏感字符为Unicode转义序列
+    safe_str = json_str.replace('<', r'\u003c').replace('>', r'\u003e').replace('&', r'\u0026')
+    # 二次JSON序列化（确保JS字符串安全）
+    return json.dumps(safe_str)
 
 def generate_enterprise_report_html(formatted_json):
     """生成完整安全分析报告（左右分栏+动态风险等级）"""
@@ -1347,7 +1354,7 @@ def generate_enterprise_report_html(formatted_json):
     # JavaScript核心交互逻辑
     js = f"""
     <script>
-    const globalCodeDict = {json.dumps(global_code_dict)};
+    const globalCodeDict = JSON.parse({js_json_escape(global_code_dict)});
     
     // 分页功能实现
     let currentFilteredVulnItems = [];
