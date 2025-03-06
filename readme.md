@@ -1,7 +1,7 @@
 # 🚀 **HRP Auto Analyze 智能漏洞分析插件**  
 
 🔥 *"让IOT分析像喝奶茶一样简单！"* 
-    官网：https://hexian2001.github.io/HRP_Auto_Analyze/
+    
 
 ---
 
@@ -13,7 +13,7 @@
 ---
 
 ## 📚 **项目简介**  
-
+官网：https://hexian2001.github.io/HRP_Auto_Analyze/
 **HRP Auto Analyze** 是一款基于IDA Pro的智能漏洞分析插件，专为二进制安全分析设计。它能够自动追踪危险函数的调用链，结合伪代码和汇编代码的双重视角，利用大语言模型（LLM）进行深度威胁建模，并生成炫酷的HTML报告。无论是IoT设备固件还是传统二进制文件，HRP都能帮助你快速发现潜在的安全漏洞。
 
 ---
