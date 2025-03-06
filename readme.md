@@ -1,6 +1,7 @@
 # 🚀 **HRP Auto Analyze 智能漏洞分析插件**  
 
-🔥 *"让IOT分析像喝奶茶一样简单！"*  
+🔥 *"让IOT分析像喝奶茶一样简单！"* 
+    官网：https://hexian2001.github.io/HRP_Auto_Analyze/
 
 ---
 
@@ -136,11 +137,11 @@ C:\Python312\python.exe  -m pip install openai tenacity
 
 ## 📊 **报告样例**  
 
-![](image/2.jpg)
-
-![](image/3.jpg)
-
-![](image/4.jpg)  
+  ![1](image/2.jpg)
+  
+  ![2](image/3.jpg)
+  
+  ![3](image/4.jpg)  
 
 
 ---
