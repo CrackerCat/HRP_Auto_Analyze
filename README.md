@@ -62,8 +62,9 @@ C:\Python312\python.exe  -m pip install openai tenacity
 
 ## 🎮 **使用说明书**  
 0. 模型只推荐使用阿里云百炼的1M上下文的turbo，除此外都不是很推荐。同时目前建议是10-20的batch_size进行分析，目前哪怕LLM出错了也不会直接报错退出浪费用户的API。
+1. **脚本不需要放在plugins目录下，直接用alt+F7选择脚本即可（我不做IDA插件入口的根本原因在于，目前我所采用的编写方法会与IDA的主进程形成冲突关系。）**
 
-1. 在IDA **ALT+F7**选择我 然后开始参数配置吧
+2. 在IDA **ALT+F7**选择我 然后开始参数配置吧
 
    ```
    参数说明：
@@ -129,9 +130,9 @@ C:\Python312\python.exe  -m pip install openai tenacity
 
    ![](image/1.jpg)
 
-2. 输入你的DeepSeek API密钥 **[强烈推荐阿里云百炼]**  
+3. 输入你的DeepSeek API密钥 **[强烈推荐阿里云百炼]**  
 
-3. 收获一份比情人节礼物还精美的HTML报告 💌  
+4. 收获一份比情人节礼物还精美的HTML报告 💌  
 
 ---
 
